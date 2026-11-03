@@ -147,6 +147,11 @@ dialog{overscroll-behavior:contain}
 .gextra{display:flex;flex-direction:column;gap:6px}
 .gactions{display:flex;gap:8px;flex-wrap:wrap}
 a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.datefield{position:relative;display:block;min-width:0}
+.datefield input[type=date]{color:transparent;cursor:pointer}
+.datefield input[type=date]::-webkit-datetime-edit{opacity:0}
+.datefield .date-label{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;max-width:calc(100% - 44px)}
+.datefield .date-label.empty{color:var(--ink-2)}
 .suggest-box{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
 .suggest-box .vals{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
 .suggest-box .vals b{font-family:var(--f-mono);font-weight:500}
@@ -371,7 +376,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.03-6";
+const APP_VERSION="2026.11.03-7";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -666,6 +671,26 @@ function renderGrid(){
   const c2=$("fClear2");if(c2)c2.onclick=clearFilter;
 }
 
+/* ============ 日付欄に曜日を表示 ============
+   ブラウザ標準の日付欄は、Windowsの日付形式によって曜日が「()」と空で表示されることがある。
+   標準の欄はそのまま使い（カレンダーで選ぶ）、表示だけ「2026/11/03（火）」の形に重ねる。 */
+const dateText=v=>{if(!v)return"";const d=parse(v);return`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${"日月火水木金土"[d.getDay()]}）`};
+const nativeValue=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value");
+function enhanceDate(inp){
+  if(inp.dataset.enh)return;inp.dataset.enh="1";
+  const wrap=document.createElement("span");wrap.className="datefield";inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
+  const lab=document.createElement("span");lab.className="date-label";lab.setAttribute("aria-hidden","true");wrap.appendChild(lab);
+  const upd=()=>{const v=nativeValue.get.call(inp);lab.textContent=v?dateText(v):"日付を選択";lab.classList.toggle("empty",!v)};
+  Object.defineProperty(inp,"value",{configurable:true,get(){return nativeValue.get.call(inp)},set(v){nativeValue.set.call(inp,v);upd()}});
+  inp.addEventListener("input",upd);inp.addEventListener("change",upd);
+  const open=()=>{try{inp.showPicker&&inp.showPicker()}catch(e){}};
+  inp.addEventListener("click",open);inp.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
+  upd();
+}
+const enhanceAll=root=>root.querySelectorAll('input[type="date"]').forEach(enhanceDate);
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('input[type="date"]'))enhanceDate(n);else enhanceAll(n)}}))).observe(document.body,{childList:true,subtree:true});
+enhanceAll(document);
+
 /* ============ 成長の記録 ============ */
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function metricOf(w){if(metric==="avg")return avg(w);const v=w.review&&w.review.scores&&w.review.scores[metric];return v>0?v:null}
@@ -953,11 +978,14 @@ ${g.point?`練習ポイント：${g.point}\n`:""}描く範囲の目安：${g.sca
 最近描いた作品：
 ${recent||"（まだありません）"}
 
-進め方：
-1. まず、今描きたい気分や好きなものについて、短い質問を2〜3個してください。
-2. 答えをふまえて、テーマ案を3つ出してください。各案に「タイトル」「どんな場面か」「構図のアイデア」「見せ場」を付けてください。お題の言葉は全部使わなくても、ふくらませてもかまいません。
-3. 最近の作品と題材がかぶりすぎないようにしてください。
-4. 決まったら、上達ノートのテーマ欄に貼れるように、最後にテーマを1行でまとめてください。`;
+進め方（一問一答でお願いします）：
+- 質問は1回に1つだけしてください。私が答えるまで、次の質問やテーマ案に進まないでください。
+- 各質問には答えやすいように選択肢を3〜4個（A〜D）付け、最後に「その他（自由に書く）」も入れてください。
+- 質問は全部で3問です。例えば「今の気分」「いちばん描きたい要素（キャラ・背景・小物など）」「見せ場にしたいところ」のように、テーマを絞り込める順番で聞いてください。
+- 3問の答えがそろったら、テーマ案を3つ出してください。各案に「タイトル」「どんな場面か」「構図のアイデア」「見せ場」を付けてください。お題の言葉は全部使わなくても、ふくらませてもかまいません。最近の作品と題材がかぶりすぎないようにしてください。
+- 私が案を選んだら、上達ノートのテーマ欄に貼れるように、テーマを1行でまとめてください。
+
+では、1問目だけをお願いします。`;
 }
 function setupGacha(w,getCtx){
   const g=Object.assign({who:"",where:"",mood:"",point:"",scale:"",lock:{},usePoint:true},w.theme&&w.theme.gacha||{});g.lock={};
