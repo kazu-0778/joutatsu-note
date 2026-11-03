@@ -207,6 +207,8 @@ textarea{min-height:76px;resize:vertical}
 .set-list.sorting .set-row.dragging{cursor:grabbing;border-color:var(--accent)}
 .set-list.sorting .set-row b{font-weight:500}
 .toast{display:flex;align-items:center;gap:12px}
+.discard{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:14px}
+.discard-btns{display:flex;gap:8px;margin-left:auto}
 .toast button{border:none;background:none;color:inherit;text-decoration:underline;cursor:pointer;font-size:14px;padding:0}
 .sched-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 /* tags */
@@ -727,9 +729,27 @@ let lockY=0;
 function lockScroll(){if(document.body.style.position==="fixed")return;lockY=window.scrollY;const b=document.body.style;b.position="fixed";b.top=`-${lockY}px`;b.left="0";b.right="0";document.documentElement.style.overflow="hidden"}
 function unlockScroll(){if(document.body.style.position!=="fixed")return;const b=document.body.style;b.position=b.top=b.left=b.right="";document.documentElement.style.overflow="";const y=lockY;window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y))}
 dlg.addEventListener("close",unlockScroll);
-function openDlg(html,onMount){dlg.onkeydown=null;$("dlgInner").innerHTML=html;if(!dlg.open){lockScroll();dlg.showModal()}onMount&&onMount();$("dlgInner").querySelector(".dlg-body").scrollTop=0}
-function closeDlg(){dlg.close()}
-dlg.addEventListener("click",e=>{if(e.target===dlg)closeDlg()});
+/* 入力画面（記録・計画・設定）は、保存せずに閉じようとしたら確認する。
+   ウィンドウの外のクリックやEscキーで、入力途中の内容が消えないようにするため。 */
+let dlgGuard=false,dlgDirty=false,guardPending=false;
+const guardNext=()=>{guardPending=true};
+function openDlg(html,onMount){dlg.onkeydown=null;dlgGuard=guardPending;guardPending=false;dlgDirty=false;
+  $("dlgInner").innerHTML=html;if(!dlg.open){lockScroll();dlg.showModal()}onMount&&onMount();$("dlgInner").querySelector(".dlg-body").scrollTop=0}
+function closeDlg(){dlgDirty=false;dlg.close()}
+function requestClose(){
+  if(!(dlgGuard&&dlgDirty))return closeDlg();
+  const foot=$("dlgInner").querySelector(".dlg-foot");if(!foot)return closeDlg();
+  if(foot.querySelector(".discard"))return foot.querySelector(".discard button").focus();
+  const bar=document.createElement("div");bar.className="discard";bar.setAttribute("role","alert");
+  bar.innerHTML=`<span>保存していない入力があります。閉じると入力内容は消えます。</span><span class="discard-btns"><button class="btn sm" type="button" data-keep>編集に戻る</button><button class="btn sm danger" type="button" data-discard>破棄して閉じる</button></span>`;
+  foot.prepend(bar);bar.querySelector("[data-keep]").onclick=()=>bar.remove();bar.querySelector("[data-discard]").onclick=closeDlg;bar.querySelector("[data-keep]").focus();
+}
+const markDirty=e=>{if(e.target.closest&&e.target.closest(".discard"))return;dlgDirty=true};
+$("dlgInner").addEventListener("input",markDirty);$("dlgInner").addEventListener("change",markDirty);
+$("dlgInner").addEventListener("click",e=>{if(e.target.closest(".scale button,[data-rmt],.sugg button,[data-rm],[data-rmx],[data-rmp],#pAddPh,#pReset,#sAddAx,#sAddPh,#sResetAx,#pUseSg"))dlgDirty=true});
+$("dlgInner").addEventListener("drop",()=>{dlgDirty=true});
+dlg.addEventListener("click",e=>{if(e.target===dlg)requestClose()});
+dlg.addEventListener("cancel",e=>{if(dlgGuard&&dlgDirty){e.preventDefault();requestClose()}});
 const head=t=>`<div class="dlg-head"><h3>${t}</h3><button class="btn ghost sm" type="button" data-close>閉じる</button></div>`;
 
 function scaleHTML(key,val){return`<div class="scale" data-scale="${key}">${[1,2,3,4,5].map(n=>`<button type="button" data-v="${n}" class="${val===n?"on":""}" aria-label="${n}点">${n}</button>`).join("")}</div>`}
@@ -755,7 +775,7 @@ function openRecord(existing){
   const scores={...(w.review&&w.review.scores||{})}; const refl={achieved:(w.reflection&&w.reflection.achieved)||0};
   let pendingBlob=null;
   const curSrc=store.src(w);
-  openDlg(`${head(editingDone?"作品を編集":"完成作品を記録")}
+  guardNext();openDlg(`${head(editingDone?"作品を編集":"完成作品を記録")}
   <form class="dlg-body" id="recForm">
     <fieldset><legend><span class="n">1</span>作品</legend>
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="画像を選ぶ">
@@ -901,7 +921,7 @@ function openPlan(existing){
     const us=$("pUseSg"); if(us)us.onclick=()=>{phases=phases.map((p,i)=>({...p,w:sg.vals[i]}));recompute();toast("実績の配分にしました")};
     $("pSum").innerHTML=`配分合計 <b class="mono" style="color:${totalW===100?"inherit":"var(--warn)"}">${totalW}%</b>${totalW===100?"":"（100%になるよう比率で計算します）"} ・ 全${info.days}日（平日${info.weekdays}日・休日${info.holidays}日） ・ 作業可能 <b class="mono">${Math.round(info.H*10)/10}h</b>`;
   };
-  openDlg(`${head(existing?"スケジュールを編集":"制作を計画")}
+  guardNext();openDlg(`${head(existing?"スケジュールを編集":"制作を計画")}
   <div class="dlg-body">
     <fieldset><legend>作品</legend>
       <div class="f"><label for="pTitle">タイトル（仮でOK）</label><input type="text" id="pTitle" value="${esc(w.title)}" placeholder="例：秋の制服イラスト"></div>
@@ -962,7 +982,7 @@ function openSettings(){
       <input type="number" min="0" max="100" step="5" value="${p.w}" data-i="${i}" data-k="w" aria-label="配分%">
       <span class="ctl"><button type="button" class="btn sm ghost" data-rmp="${i}" aria-label="削除" ${st.phases.length>1?"":"disabled"}>×</button></span></div>`).join("")+
       `<p class="hint">合計 <b class="mono" style="color:${t===100?"inherit":"var(--warn)"}">${t}%</b></p>`};
-  openDlg(`${head("設定")}
+  guardNext();openDlg(`${head("設定")}
   <div class="dlg-body">
     <fieldset><legend>データの保存とバックアップ</legend>
       <p class="hint">保存先：<b>${storagePref()==="gdrive"?"Googleドライブ（PCと連携）":"この端末のみ"}</b> ・ 最後のバックアップ：<b>${lastBackup()?fmtFull(lastBackup()):"まだありません"}</b></p>
@@ -1202,7 +1222,7 @@ async function completePhase(w){
 /* ============ イベント ============ */
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-close],[data-open],[data-edit],[data-finish],[data-act],[data-step]");if(!t)return;
-  if(t.hasAttribute("data-close"))return closeDlg();
+  if(t.hasAttribute("data-close"))return requestClose();
   if(!store){toast("読み込み中です");return}
   const find=id=>works.find(w=>w.id===id);
   if(t.dataset.step)return completePhase(find(t.dataset.step));
