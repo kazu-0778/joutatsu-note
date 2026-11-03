@@ -1,0 +1,1279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>上達ノート</title>
+<meta name="description" content="イラストの記録・自己評価・課題・制作スケジュールをまとめる上達ノート">
+<meta name="theme-color" content="#EFEFEF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1E1E1E" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="上達ノート">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: スケッチブックの見開き。左に「いまの課題」、右に「制作中スケジュール」、下に作品タイル。 */
+:root{
+  /* 面と文字は無彩色（色みゼロのグレー）。作品の色の見え方に影響しないように。色はボタンと評価の青だけに絞る */
+  --paper:#EFEFEF; --sheet:#FFFFFF; --ink:#1A1A1A; --ink-2:#666666; --rule:#D6D6D6;
+  --accent:#3F51C4; --accent-soft:#E6E6E6; --on-accent:#FFFFFF;
+  --ph-rough:#9AA0AE; --ph-line:#2C3142; --ph-color:#D9774A; --ph-finish:#3AA38A; --ph-other:#8E6CC8;
+  --warn:#C2410C; --warn-soft:#FDEBDD; --ok:#1F8A5B; --ok-soft:#DDF3E8;
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New",system-ui,sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1E1E1E; --sheet:#282828; --ink:#ECECEC; --ink-2:#A0A0A0; --rule:#3C3C3C;
+  --accent:#8F9DF5; --accent-soft:#363636; --on-accent:#121212;
+  --ph-rough:#7D8494; --ph-line:#C9CEDB; --ph-color:#E8936A; --ph-finish:#5CC4A8; --ph-other:#B497EA;
+  --warn:#FB9A64; --warn-soft:#3A2418; --ok:#5CD39A; --ok-soft:#17332A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1E1E1E; --sheet:#282828; --ink:#ECECEC; --ink-2:#A0A0A0; --rule:#3C3C3C;
+  --accent:#8F9DF5; --accent-soft:#363636; --on-accent:#121212;
+  --ph-rough:#7D8494; --ph-line:#C9CEDB; --ph-color:#E8936A; --ph-finish:#5CC4A8; --ph-other:#B497EA;
+  --warn:#FB9A64; --warn-soft:#3A2418; --ok:#5CD39A; --ok-soft:#17332A; color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.3}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)}
+.label{font-size:12px;letter-spacing:.08em;color:var(--ink-2);font-weight:500}
+
+header.top{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"brand actions icons";align-items:center;gap:12px 16px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+header.top .brand{grid-area:brand} header.top .actions{grid-area:actions} header.top .top-icons{grid-area:icons;display:flex;gap:2px}
+@media (max-width:720px){header.top{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand icons" "actions actions"}
+  .brand span{display:none} .brand h1{font-size:26px} header.top .actions .btn{flex:1}}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:30px;letter-spacing:.02em}
+.brand span{font-size:13px;color:var(--ink-2)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:500;font-size:14px;white-space:nowrap}
+.btn:hover{background:var(--accent-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.danger{border-color:var(--warn);color:var(--warn)}
+.btn.sm{padding:4px 12px;font-size:13px}
+
+.status-line{font-size:12px;color:var(--ink-2)}
+.status-line b{font-weight:500;color:var(--ink)}
+
+.spread{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.spread{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font-size:17px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+
+.challenge-text{font-size:21px;font-weight:700;line-height:1.45}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.plain{background:transparent;border:1px solid var(--rule);color:var(--ink-2)}
+.practice{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px dashed var(--rule)}
+.practice:first-child{border-top:none;padding-top:0}
+.practice .t{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);padding-top:3px;min-width:48px}
+.practice b{font-weight:700}
+.practice p{margin:0;grid-column:2;color:var(--ink-2);font-size:14px}
+.ai-box{border:1px solid var(--rule);border-radius:8px;padding:12px 14px;font-size:14px;white-space:pre-wrap;background:var(--paper)}
+.empty{border:1.5px dashed var(--rule);border-radius:var(--r);padding:28px;text-align:center;color:var(--ink-2);display:flex;flex-direction:column;align-items:center;gap:12px}
+
+/* schedule */
+.sched{display:flex;flex-direction:column;gap:18px}
+.sched-item{display:flex;flex-direction:column;gap:8px}
+.sched-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sched-head b{font-size:16px}
+.bar{position:relative;height:30px;display:flex;border-radius:6px;overflow:hidden;background:var(--paper)}
+.seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap;border-right:2px solid var(--sheet);opacity:.45}
+.seg.done{opacity:1}
+.seg.cur{opacity:1;box-shadow:inset 0 0 0 2px var(--ink)}
+.today{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn)}
+.today::after{content:"今日";position:absolute;top:-16px;left:-10px;font-size:10px;color:var(--warn);font-weight:700}
+.sched-meta{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+
+/* gallery */
+.gal-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.gal-head h2{font-family:var(--f-display);font-weight:400;font-size:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+@media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+.tile{position:relative;border:none;padding:0;background:var(--sheet);border-radius:var(--r);overflow:hidden;cursor:pointer;text-align:left;display:flex;flex-direction:column;box-shadow:0 0 0 1px var(--rule)}
+.tile:hover{box-shadow:0 0 0 2px var(--accent)}
+.tile .img{aspect-ratio:1/1;width:100%;max-width:100%;background:var(--paper);display:block;object-fit:cover}
+.tile .ph{aspect-ratio:1/1;width:100%;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-size:28px;color:var(--ink-2);background:repeating-linear-gradient(135deg,var(--paper) 0 10px,var(--sheet) 10px 20px)}
+.tile .cap{padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .cap b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .cap span{font-size:12px;color:var(--ink-2)}
+.tile .badge{position:absolute;top:8px;left:8px}
+.tile .score{position:absolute;top:8px;right:8px;background:var(--sheet);border-radius:999px;padding:1px 8px;font-size:12px;font-family:var(--f-mono)}
+
+/* dialog */
+dialog{border:none;border-radius:14px;padding:0;background:var(--sheet);color:var(--ink);width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+dialog::backdrop{background:rgba(10,12,20,.55)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--rule)}
+.dlg-head h3{font-size:18px}
+.dlg-body{padding:20px;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:22px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+dialog{overscroll-behavior:contain}
+.opt{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--rule);border-radius:10px;padding:12px 14px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt input{margin-top:5px;accent-color:var(--accent)}
+.opt b{display:block}
+.opt .chip{margin-left:6px}
+.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.note{font-size:13px;border-left:3px solid var(--rule);padding:4px 10px;color:var(--ink-2)}
+.suggest-box{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.suggest-box .vals{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.suggest-box .vals b{font-family:var(--f-mono);font-weight:500}
+.suggest-box .diff{font-size:12px;color:var(--ink-2)}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--rule);flex-wrap:wrap}
+fieldset{border:none;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:12px}
+legend{font-weight:700;font-size:15px;padding:0;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+legend .n{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);font-weight:400}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:13px;color:var(--ink-2)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+input[type=text],input[type=date],select,textarea{width:100%;border:1px solid var(--rule);border-radius:8px;padding:8px 10px;background:var(--paper)}
+textarea{min-height:76px;resize:vertical}
+.drop{border:1.5px dashed var(--rule);border-radius:10px;padding:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop img{max-height:140px;max-width:100%;border-radius:6px}
+.stars{display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr);gap:6px 12px;align-items:center}
+.scale{display:flex;gap:4px;flex-wrap:wrap}
+.scale button{width:34px;height:30px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);cursor:pointer;font-family:var(--f-mono)}
+.scale button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.prev-box{background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.phase-table{width:100%;border-collapse:collapse;font-size:14px}
+.phase-table th,.phase-table td{padding:6px 6px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:middle}
+.phase-table th{font-size:12px;color:var(--ink-2);font-weight:500}
+.phase-table input[type=number]{width:64px;border:1px solid var(--rule);border-radius:6px;padding:4px 6px;background:var(--paper)}
+.phase-table input[type=date]{padding:4px 6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.tbl-wrap{overflow-x:auto}
+@media (max-width:480px){.phase-table th,.phase-table td{padding:6px 3px}.phase-table input[type=text]{width:70px!important}.phase-table input[type=number]{width:50px}.phase-table .dot{display:none}.phase-table td.mono{font-size:12px}}
+.detail-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+@media (max-width:640px){.detail-top{grid-template-columns:minmax(0,1fr)}}
+.detail-top img{width:100%;border-radius:8px;background:var(--paper)}
+.kv{display:flex;flex-direction:column;gap:2px}
+.kv p{margin:0;white-space:pre-wrap}
+.radar text{font-size:11px;fill:var(--ink-2);font-family:var(--f-body)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 18px;border-radius:999px;font-size:14px;z-index:50}
+.check{display:flex;align-items:center;gap:6px;cursor:pointer}
+.sugg{display:flex;gap:8px;flex-wrap:wrap}
+.sugg button{border:1px dashed var(--accent);background:transparent;color:var(--accent);border-radius:8px;padding:6px 10px;cursor:pointer;text-align:left;font-size:13px;line-height:1.4}
+.sugg button:hover{background:var(--accent-soft)}
+.sugg small{display:block;color:var(--ink-2)}
+.set-list{display:flex;flex-direction:column;gap:6px}
+.set-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:6px;align-items:center}
+.set-row.ph{grid-template-columns:minmax(0,1fr) 90px auto}
+.set-row .ctl{display:flex;gap:2px}
+.set-row input,.set-row select{padding:6px 8px}
+.toggle{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.toggle input{margin-top:5px}
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.days label{display:flex;align-items:center;justify-content:center;width:38px;height:32px;border:1px solid var(--rule);border-radius:6px;cursor:pointer;background:var(--paper)}
+.days input{position:absolute;opacity:0;pointer-events:none}
+.days label:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.days label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--ink-2);margin:0}
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-top:-12px}
+.tabs a{padding:8px 16px;text-decoration:none;color:var(--ink-2);font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .cnt{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);margin-left:6px}
+.view{display:flex;flex-direction:column;gap:28px}
+/* drag handle */
+.set-row{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto}
+.set-row.ph{grid-template-columns:minmax(0,1fr) 90px auto}
+.handle{width:30px;height:34px;border:none;background:transparent;color:var(--ink-2);cursor:grab;touch-action:none;border-radius:6px;font-size:16px;line-height:1}
+.handle:hover{background:var(--accent-soft);color:var(--ink)}
+.set-row.dragging{opacity:.9;background:var(--accent-soft);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.set-row.dragging .handle{cursor:grabbing}
+.set-list.sorting .set-row{grid-template-columns:auto minmax(0,1fr);border:1px solid var(--rule);border-radius:8px;padding:4px 12px 4px 4px;background:var(--paper);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.set-list.sorting .set-row.dragging{cursor:grabbing;border-color:var(--accent)}
+.set-list.sorting .set-row b{font-weight:500}
+.toast{display:flex;align-items:center;gap:12px}
+.toast button{border:none;background:none;color:inherit;text-decoration:underline;cursor:pointer;font-size:14px;padding:0}
+.sched-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* tags */
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:1px 8px;font-size:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-2);white-space:nowrap}
+.tag-input{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--rule);border-radius:8px;padding:6px 8px;background:var(--paper)}
+.tag-input input{border:none!important;background:transparent!important;padding:2px 4px!important;flex:1;min-width:120px;width:auto!important}
+.tag-input input:focus{outline:none}
+.tag-input:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.tag-input .tag{background:var(--accent-soft);color:var(--accent);border-color:transparent;font-size:13px}
+.tag-input .tag button{border:none;background:none;color:inherit;cursor:pointer;padding:0 2px;font-size:14px;line-height:1}
+.tile .tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;overflow:hidden;max-height:26px;padding-bottom:2px}
+.tile .tags .tag{line-height:1.6}
+/* filters */
+.filters{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.filter-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}
+.filter-row .f{flex:1 1 150px}
+.filter-row .f.narrow{flex:0 1 150px}
+.tag-filter{display:flex;flex-wrap:wrap;gap:6px}
+.tag-filter button{border:1px solid var(--rule);background:var(--paper);border-radius:999px;padding:3px 12px;font-size:13px;cursor:pointer}
+.tag-filter button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tag-filter button .mono{font-size:11px;opacity:.75;margin-left:4px}
+.gbar{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;min-height:40px}
+.gbar-l{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;font-size:13px;color:var(--ink-2)}
+.gbar-r{display:flex;align-items:center;gap:4px;margin-left:auto}
+.icon{position:relative;width:36px;height:36px;border:none;border-radius:999px;background:transparent;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.icon:hover,.icon[aria-expanded="true"],.icon[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.icon .badge{position:absolute;top:3px;right:3px;min-width:15px;height:15px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:10px;line-height:15px;text-align:center;font-family:var(--f-mono);padding:0 3px}
+.search{display:flex;align-items:center}
+.search input{width:170px;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;background:var(--sheet);font-size:14px}
+@media (max-width:480px){.search input{width:120px}}
+.fchip{display:inline-flex;align-items:center;gap:2px;border-radius:999px;padding:1px 4px 1px 10px;font-size:12px;background:var(--accent-soft);color:var(--accent)}
+.fchip button{border:none;background:none;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:999px}
+.fchip button:hover{background:var(--sheet)}
+.linkbtn{border:none;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;font-size:12px;padding:2px 4px}
+/* masonry */
+.masonry{display:flex;gap:6px;align-items:flex-start}
+.mcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
+.masonry .tile{border-radius:4px;box-shadow:none;background:var(--rule)}
+.masonry .tile img{display:block;width:100%;height:auto;max-width:100%}
+.masonry .tile:hover img{filter:brightness(1.06)}
+.masonry .tile:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.masonry .ph{aspect-ratio:1/1}
+@media (prefers-reduced-motion:no-preference){.masonry .tile img{transition:filter .2s}}
+/* detail */
+.d-nav{display:flex;gap:4px;align-items:center}
+.d-score{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.d-score .st{font-size:22px;letter-spacing:2px;color:var(--accent)}
+.d-score .st .off{color:var(--rule)}
+.d-score b{font-family:var(--f-mono);font-size:20px;font-weight:500}
+.d-rows{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px;align-items:center}
+.d-rows .st{color:var(--accent);letter-spacing:1px}
+.d-rows .st .off{color:var(--rule)}
+.detail-top img{max-height:70vh;object-fit:contain}
+/* growth */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{border:1px solid var(--rule);border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat b{font-size:24px;font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums;line-height:1.3}
+.stat .d{font-size:12px;color:var(--ink-2)}
+.growth-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.growth-grid{grid-template-columns:minmax(0,1fr)}}
+.chart-wrap{position:relative}
+.chart text{font-size:11px;fill:var(--ink-2);font-family:var(--f-mono)}
+.chart .grid line{stroke:var(--rule);stroke-width:1}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12px;padding:6px 10px;border-radius:6px;white-space:nowrap;transform:translate(-50%,calc(-100% - 10px));z-index:2}
+.ach{display:flex;flex-direction:column;gap:10px}
+.ach-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ach-row .c{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ach-row .m{display:flex;gap:3px}
+.ach-row .m i{width:12px;height:12px;border-radius:3px;background:var(--rule)}
+.ach-row .m i.on{background:var(--accent)}
+.ach-row .w{font-size:12px;color:var(--ink-2);grid-column:1/-1}
+details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
+.data-table{border-collapse:collapse;font-size:13px;margin-top:8px}
+.data-table th,.data-table td{border-bottom:1px solid var(--rule);padding:4px 10px;text-align:left;white-space:nowrap}
+.data-table td.n{font-family:var(--f-mono);text-align:right}
+@media (prefers-reduced-motion:no-preference){.tile{transition:box-shadow .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>上達ノート</h1><span>描く → ふり返る → 課題を決める → また描く</span></div>
+    <div class="actions">
+      <button class="btn" id="btnPlan" type="button">＋ 制作を計画</button>
+      <button class="btn primary" id="btnAdd" type="button">＋ 完成作品を記録</button>
+    </div>
+    <div class="top-icons">
+      <button class="icon" id="btnTheme" type="button" aria-label="ダークモードにする"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path id="themeIco" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+      <button class="icon" id="btnSet" type="button" aria-label="設定"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="表示の切り替え">
+    <a href="#home" id="tabHome">ホーム</a>
+    <a href="#gallery" id="tabGallery">作品ギャラリー<span class="cnt" id="galCount"></span></a>
+  </nav>
+  <div class="status-line" id="status">読み込み中…</div>
+
+  <div class="view" id="viewHome">
+  <section class="panel">
+    <h2>制作中のスケジュール</h2>
+    <div class="sched" id="sched"></div>
+  </section>
+  <section class="panel" id="challengePanel"></section>
+
+  <section class="panel" id="growth" aria-label="成長の記録"></section>
+  </div>
+
+  <div class="view" id="viewGallery" hidden>
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div class="gbar">
+      <div class="gbar-l" aria-live="polite"><span id="fResult" class="mono"></span><span id="fChips" style="display:contents"></span></div>
+      <div class="gbar-r">
+        <div class="search"><input type="search" id="fq" placeholder="タイトル・タグ・メモ" aria-label="作品を検索" hidden>
+          <button class="icon" type="button" id="btnSearch" aria-label="検索" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div>
+        <button class="icon" type="button" id="btnFilter" aria-label="絞り込み・並び順" aria-expanded="false" aria-controls="filters"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="fBadge" hidden></span></button>
+        <button class="icon" type="button" id="btnSize" aria-label="作品を大きく表示" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+      </div>
+    </div>
+    <div class="filters" id="filters" role="search" aria-label="作品の絞り込み" hidden>
+      <div class="filter-row">
+        <div class="f narrow"><label for="fPreset">期間</label><select id="fPreset">
+          <option value="all">すべて</option><option value="m1">今月</option><option value="m3">過去3か月</option><option value="m6">過去6か月</option><option value="y0">今年</option><option value="y1">昨年</option><option value="custom">日付を指定</option></select></div>
+        <div class="f narrow"><label for="fFrom">開始</label><input type="date" id="fFrom"></div>
+        <div class="f narrow"><label for="fTo">終了</label><input type="date" id="fTo"></div>
+        <div class="f narrow"><label for="sort">並び順</label><select id="sort">
+          <option value="new">新しい順</option><option value="old">古い順</option><option value="score">自己評価が高い順</option></select></div>
+      </div>
+      <div class="f">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="label">タグ</span>
+          <select id="fMode" aria-label="タグの条件" style="width:auto;padding:3px 8px;font-size:13px"><option value="any">いずれかを含む</option><option value="all">すべてを含む</option></select></div>
+        <div class="tag-filter" id="fTags"></div>
+      </div>
+    </div>
+    <div class="masonry" id="grid"></div>
+  </section>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="dlg" id="dlgInner"></div></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="config.js"></script>
+<script src="drive.js"></script>
+<script>
+/* ============ 定数 ============ */
+const DEFAULT_SETTINGS={
+  axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
+        {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
+  suggest:true,
+  hours:{weekday:2,holiday:5},
+  holidays:[0,6],
+  phases:[{name:"ラフ",w:20},{name:"線画",w:30},{name:"着色",w:35},{name:"仕上げ",w:15}]
+};
+const WEEK=["日","月","火","水","木","金","土"];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const PHASE_COLORS={"ラフ":"--ph-rough","線画":"--ph-line","着色":"--ph-color","仕上げ":"--ph-finish"};
+
+/* 課題カテゴリごとの練習メニュー。time は1回あたりの目安。 */
+const ADVICE={
+  anatomy:{label:"人体・デッサン",hint:"体のバランスや立体感が不安定",practices:[
+    ["15分","ジェスチャードローイング","写真資料を30秒〜2分で描き、ポーズの流れ（背骨の線）だけを捉える。細部は描かない。"],
+    ["20分","箱と円柱で人体を組む","胸郭・骨盤を箱、手足を円柱に置き換えて、いろいろな角度から描く。"],
+    ["30分","骨格・筋肉の模写","1回1部位（肩、膝など）に絞り、解剖図を見ながら模写して名前を書き込む。"]]},
+  face:{label:"顔・表情",hint:"顔の角度や表情が固い",practices:[
+    ["15分","アタリの回転練習","球と十字線で、正面→斜め→横→あおり→ふかんを1セットで描く。"],
+    ["20分","表情の描き分け","同じキャラで喜怒哀楽＋2種を並べ、眉・まぶた・口角の違いを比べる。"],
+    ["20分","好きな絵師の顔模写","目・鼻・口の位置関係を測りながら模写し、自分の絵と重ねて差を見る。"]]},
+  hands:{label:"手・足",hint:"手や足を隠しがち・描くと崩れる",practices:[
+    ["10分","自分の手のクロッキー","スマホで手を撮り、1枚2分で10枚描く。指の付け根の弧を意識。"],
+    ["20分","ミトン→指の分解","手のひらをミトン形、指を3つの節に分けて描く。"],
+    ["15分","持ち物を持たせる","ペン・コップ・スマホなど、物を持つ手を描いて接地面を意識する。"]]},
+  pose:{label:"ポーズ・動き",hint:"立ち絵ばかり・動きが硬い",practices:[
+    ["15分","ライン・オブ・アクション","1本の曲線を先に引き、それに沿って体を乗せる。1日10ポーズ。"],
+    ["20分","スポーツ写真の模写","重心と支点（どこに体重が乗っているか）を赤で書き込む。"],
+    ["30分","同じキャラで3ポーズ","立ち・座り・走りを描き、シルエットだけで判別できるかチェック。"]]},
+  composition:{label:"構図",hint:"画面がいつも同じ・視線が散る",practices:[
+    ["10分","サムネイル10枚","5cm角の枠で、白黒3値だけのサムネを10案出してから1枚を選ぶ。"],
+    ["15分","名作の構図分析","好きなイラストの上に主線・三分割線・視線誘導を描き込む。"],
+    ["20分","トリミング違い","同じ下描きを寄り・引き・斜めの3通りで切り取り比較する。"]]},
+  perspective:{label:"パース・背景",hint:"背景が苦手・キャラが浮く",practices:[
+    ["15分","箱の一点・二点透視","消失点を置いて箱を20個。地面に置く・浮かせる両方。"],
+    ["20分","アイレベルに人を立たせる","水平線を引き、複数の人物の頭の高さを揃えて配置する。"],
+    ["30分","部屋の写真模写","写真から消失点を見つけ、パース線を引いてから描く。"]]},
+  lineart:{label:"線画",hint:"線がガタつく・強弱がない",practices:[
+    ["10分","ストローク練習","直線・円・S字を各20本。肘から引く。毎回ウォームアップに。"],
+    ["20分","強弱の付け方","輪郭は太く、内側・遠いものは細く。同じラフを2通りの線で清書し比べる。"],
+    ["20分","ペン設定の見直し","手ぶれ補正・入り抜きを3段階で試し、自分に合う設定をメモする。"]]},
+  color:{label:"色彩・配色",hint:"色が濁る・まとまらない",practices:[
+    ["15分","3色配色サムネ","メイン・サブ・アクセントの3色だけでサムネを5案作る。"],
+    ["20分","カラーピック分析","好きな絵からスポイトで5色抜き、彩度と明度の分布を並べてみる。"],
+    ["15分","グレースケール確認","着色後に白黒表示にして、明暗差が足りているかチェックする。"]]},
+  light:{label:"光と影",hint:"のっぺりする・立体感がない",practices:[
+    ["15分","球・立方体のライティング","光源を1つ決め、ハイライト・明部・暗部・反射光・接地影を塗り分ける。"],
+    ["20分","2値影の練習","キャラに影を1段階だけ入れ、形が伝わるかを見る。"],
+    ["30分","光源違いの塗り比べ","同じ線画を順光・逆光・上から光で塗り分ける。"]]},
+  painting:{label:"塗り・質感",hint:"塗り方が決まらない・質感が出ない",practices:[
+    ["20分","素材の描き分け","金属・布・肌・髪を小さく並べて塗り、反射の強さの違いを見る。"],
+    ["30分","好きな絵の塗り模写","レイヤー順（下塗り→影→光）を推測してメモしながら模写する。"],
+    ["15分","ブラシを3本に絞る","使うブラシを3本だけにして1枚塗り、手順を固定化する。"]]},
+  clothes:{label:"服・シワ",hint:"服が平面的・シワが不自然",practices:[
+    ["15分","シワの7パターン","引っ張り・たるみ・ねじれ・折れ・積み重なりなどを分けて描く。"],
+    ["20分","実物の服を観察","椅子に掛けた服を描き、支点からシワが伸びる方向を確認する。"],
+    ["30分","同じポーズで衣装替え","1つの素体に3種類の服を着せて描く。"]]},
+  speed:{label:"完成力・スピード",hint:"途中で止まる・時間がかかりすぎる",practices:[
+    ["60分","時間制限1枚","タイマーをかけ、ラフ15・線画20・塗り20・仕上げ5分で必ず終わらせる。"],
+    ["—","工程ごとの実測","スケジュール機能の工程ごとに実際にかかった日数を記録し、次回の配分に反映する。"],
+    ["—","「8割で出す」ルール","仕上げ工程で直す箇所を3つまでと決めて、それ以上はやらない。"]]},
+  other:{label:"その他",hint:"上のどれにも当てはまらない",practices:[
+    ["—","課題を小さく分ける","「〜がうまくなる」ではなく「〜を3回描く」のように回数や行動で書く。"],
+    ["—","参考資料を3枚集める","課題に近い作品を3枚集め、何が良いのかを言葉にする。"]]}
+};
+
+/* ============ テーマ（端末ごとに記憶） ============ */
+const hostTheme=document.documentElement.getAttribute("data-theme");
+let themePref="auto"; try{themePref=localStorage.getItem("un-theme")||"auto"}catch(e){}
+const isDark=()=>{const a=document.documentElement.getAttribute("data-theme");return a?a==="dark":matchMedia("(prefers-color-scheme: dark)").matches};
+function applyTheme(){const r=document.documentElement;
+  if(themePref==="auto"){hostTheme?r.setAttribute("data-theme",hostTheme):r.removeAttribute("data-theme")}else r.setAttribute("data-theme",themePref);
+  const d=isDark(),b=document.getElementById("btnTheme"),ic=document.getElementById("themeIco");
+  if(b){b.setAttribute("aria-label",d?"ライトモードにする":"ダークモードにする");
+    ic.setAttribute("d",d?"M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z":"M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z")}}
+function setTheme(v){themePref=v;try{localStorage.setItem("un-theme",v)}catch(e){}applyTheme()}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyTheme);
+
+/* ============ 状態 ============ */
+let works=[]; let store=null; let sampleFn=null; let dlCap=null; let sortMode="new"; let metric="avg";
+let settings=clone(DEFAULT_SETTINGS);
+const axes=()=>settings.axes;
+function applySettings(raw){const d=clone(DEFAULT_SETTINGS);settings={...d,...(raw||{}),hours:{...d.hours,...((raw&&raw.hours)||{})}};
+  if(!Array.isArray(settings.axes)||!settings.axes.length)settings.axes=d.axes;
+  if(!Array.isArray(settings.phases)||!settings.phases.length)settings.phases=d.phases;
+  if(!Array.isArray(settings.holidays))settings.holidays=d.holidays;}
+try{sortMode=localStorage.getItem("un-sort")||"new"}catch(e){}
+let filt={q:"",preset:"all",from:"",to:"",tags:[],mode:"any"};
+let galBig=false; try{galBig=localStorage.getItem("un-big")==="1"}catch(e){}
+const arCache={}; let galList=[];
+try{filt={...filt,...JSON.parse(localStorage.getItem("un-filter")||"{}")}}catch(e){}
+const saveFilt=()=>{try{localStorage.setItem("un-filter",JSON.stringify(filt))}catch(e){}};
+const allTags=()=>{const m=new Map();done().forEach(w=>(w.tags||[]).forEach(t=>m.set(t,(m.get(t)||0)+1)));return[...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja"))};
+
+/* ============ 日付 ============ */
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{if(!s)return null;const[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c)};
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
+const diffDays=(a,b)=>Math.round((parse(b)-parse(a))/86400000);
+const fmt=s=>{if(!s)return"—";const d=parse(s);return`${d.getMonth()+1}/${d.getDate()}`};
+const fmtFull=s=>{if(!s)return"—";const d=parse(s);return`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* 期日の自動計算：開始日〜締切の「作業可能時間」の合計を配分%で割り、各工程の時間が貯まる日を期日にする。
+   平日・休日で1日の作業時間が違うので、休日が多い期間ほど早く進む計算になる。 */
+const isHoliday=s=>settings.holidays.includes(parse(s).getDay());
+const dayHours=(s,h)=>Math.max(0,+(isHoliday(s)?h.holiday:h.weekday)||0);
+function allocate(start,due,phases,h){
+  const days=[];for(let d=start;diffDays(d,due)>=0;d=addDays(d,1))days.push(d);
+  const hrs=days.map(d=>dayHours(d,h)); const H=hrs.reduce((a,b)=>a+b,0);
+  const W=phases.reduce((a,p)=>a+(+p.w||0),0)||1; let acc=0;
+  const out=phases.map((p,i)=>{const q={...p};acc+=(+p.w||0);q.hours=Math.round(H*(+p.w||0)/W*10)/10;
+    if(i===phases.length-1){q.due=due;return q}
+    if(H<=0){q.due=addDays(start,Math.round((days.length-1)*acc/W));return q}
+    const target=H*acc/W;let c=0,j=0;for(;j<days.length;j++){c+=hrs[j];if(c>=target-1e-6)break}
+    q.due=days[Math.min(j,days.length-1)];return q});
+  const hd=days.filter(isHoliday).length;
+  return{phases:out,H,days:days.length,holidays:hd,weekdays:days.length-hd};
+}
+
+/* ============ ストレージ ============ */
+async function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open("joutatsu-note",1);
+  r.onupgradeneeded=()=>{r.result.createObjectStore("works");r.result.createObjectStore("images")};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function idbReq(db,name,mode,fn){return new Promise((res,rej)=>{const tx=db.transaction(name,mode);const r=fn(tx.objectStore(name));tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error)})}
+
+function cloudStore(db,assets){
+  const col=db.collection("works");
+  return{kind:"cloud",
+    subscribe(cb,err){return col.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),err)},
+    save:w=>{const{id,...rest}=w;return col.doc(id).set(JSON.parse(JSON.stringify(rest)))},
+    remove:async w=>{await col.doc(w.id).delete();if(w.imageId&&assets){try{await assets.delete(w.imageId)}catch(e){}}},
+    canUpload:!!assets,
+    async upload(blob){const r=await assets.upload(blob);return{imageId:r.id,imageUrl:r.url}},
+    src:w=>w.imageUrl||(w.imageId?"/_blob/"+w.imageId:""),
+    watchSettings(cb){return db.doc("settings/main").onSnapshot(s=>cb(s.exists?s.data():null),()=>cb(null))},
+    saveSettings:v=>db.doc("settings/main").set(clone(v))};
+}
+async function localStore(){
+  const db=await idbOpen(); const urls={}; let listener=null;
+  const load=async()=>{const all=await new Promise((res)=>{const out=[];const tx=db.transaction("works");const c=tx.objectStore("works").openCursor();
+      c.onsuccess=()=>{const cur=c.result;if(cur){out.push(cur.value);cur.continue()}else res(out)};});
+    for(const w of all){if(w.imageId&&!urls[w.imageId]){const b=await idbReq(db,"images","readonly",s=>s.get(w.imageId));if(b)urls[w.imageId]=URL.createObjectURL(b)}}
+    listener&&listener(all)};
+  return{kind:"local",
+    subscribe(cb){listener=cb;load();return()=>{}},
+    async save(w,o){const sync=o&&o.fromSync;if(!sync)w=Object.assign({},w,{updatedAt:new Date().toISOString()});
+      await idbReq(db,"works","readwrite",s=>s.put(JSON.parse(JSON.stringify(w)),w.id));await load();if(!sync&&window.onLocalChange)window.onLocalChange()},
+    async remove(w,o){const sync=o&&o.fromSync;if(!sync&&window.onLocalDelete)window.onLocalDelete(w.id);
+      await idbReq(db,"works","readwrite",s=>s.delete(w.id));if(w.imageId)await idbReq(db,"images","readwrite",s=>s.delete(w.imageId));await load();if(!sync&&window.onLocalChange)window.onLocalChange()},
+    async getImage(id){return await idbReq(db,"images","readonly",s=>s.get(id))},
+    canUpload:true,
+    async upload(blob){const id=uid();await idbReq(db,"images","readwrite",s=>s.put(blob,id));urls[id]=URL.createObjectURL(blob);return{imageId:id,imageUrl:""}},
+    src:w=>w.imageId?urls[w.imageId]||"":"",
+    watchSettings(cb){let v=null;try{v=JSON.parse(localStorage.getItem("un-settings")||"null")}catch(e){}cb(v);return()=>{}},
+    async saveSettings(v,o){const sync=o&&o.fromSync;if(!sync)v.updatedAt=new Date().toISOString();try{localStorage.setItem("un-settings",JSON.stringify(v))}catch(e){}applySettings(v);render();if(!sync&&window.onLocalChange)window.onLocalChange()}};
+}
+
+/* 画像を長辺2400pxに縮小して容量を節約 */
+async function shrink(file){
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type)) return file;
+  const bmp=await createImageBitmap(file); const max=2400;
+  if(Math.max(bmp.width,bmp.height)<=max&&file.size<4e6) return file;
+  const k=Math.min(1,max/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas");c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
+}
+
+/* ============ 派生データ ============ */
+const done=()=>works.filter(w=>w.status==="done").sort((a,b)=>(b.completedAt||"").localeCompare(a.completedAt||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+const wip=()=>works.filter(w=>w.status==="wip").sort((a,b)=>(a.due||"").localeCompare(b.due||""));
+const latestChallenge=()=>{const d=done().find(w=>w.nextChallenge&&w.nextChallenge.text);return d||null};
+const avg=w=>{const s=w.review&&w.review.scores;if(!s)return null;const v=Object.values(s).filter(x=>x>0);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+
+/* ============ 描画 ============ */
+const $=id=>document.getElementById(id);
+function render(){renderChallenge();renderSched();renderGrowth();renderGrid()}
+
+function practicesHTML(cat){
+  const a=ADVICE[cat]||ADVICE.other;
+  return a.practices.map(([t,n,d])=>`<div class="practice"><span class="t">${esc(t)}</span><b>${esc(n)}</b><p>${esc(d)}</p></div>`).join("");
+}
+
+function renderChallenge(){
+  const p=$("challengePanel"); const src=latestChallenge();
+  if(!src){p.innerHTML=`<h2>いまの課題</h2><div class="empty"><div>まだ課題がありません。<br>完成した作品を記録するときに「次の作品の課題」をひとつ決めると、ここに練習メニューが出ます。</div><button class="btn primary" type="button" data-act="add">完成作品を記録</button></div>`;return}
+  const c=src.nextChallenge; const a=ADVICE[c.category]||ADVICE.other;
+  p.innerHTML=`<h2><span>いまの課題</span><span class="chip">${esc(a.label)}</span></h2>
+    <div class="challenge-text">${esc(c.text)}</div>
+    <div class="muted" style="font-size:13px">「${esc(src.title)}」（${fmtFull(src.completedAt)}）で設定 ・ 次に完成作品を記録するときに反省を書きます</div>
+    <div><div class="label" style="margin-bottom:6px">おすすめの練習</div>${practicesHTML(c.category)}</div>
+    ${sampleFn?`<div style="display:flex;flex-direction:column;gap:8px"><div><button class="btn sm" type="button" id="btnAI">Claudeに練習プランを相談</button></div><div class="ai-box" id="aiOut" hidden></div></div>`:""}`;
+  const b=$("btnAI"); if(b) b.onclick=()=>askAI(src);
+}
+
+async function askAI(src){
+  const out=$("aiOut"),btn=$("btnAI"); out.hidden=false; out.textContent="考えています…"; btn.disabled=true;
+  const hist=done().slice(0,5).map(w=>`- ${w.title}（${w.completedAt||""}）平均${(avg(w)||0).toFixed(1)} / 良かった点:${w.review?.good||""} / 改善点:${w.review?.bad||""}`).join("\n");
+  const c=src.nextChallenge;
+  const prompt=`あなたはイラスト講師です。次の課題に取り組む学習者に、1週間で取り組める具体的な練習プランを日本語で提案してください。
+課題カテゴリ: ${(ADVICE[c.category]||ADVICE.other).label}
+課題: ${c.text}
+直近の作品と自己評価:
+${hist||"（記録なし）"}
+形式: 箇条書きで、1日ごとの練習（所要時間つき）を7日分、最後に「次の作品で意識するチェックポイント」を3つ。全体で400字程度。マークダウンの見出しは使わない。`;
+  try{await sampleFn(prompt,{onText:({text})=>{out.textContent=text},cache:false})}
+  catch(e){out.textContent=e&&e.code==="not_granted"?"Claudeへの相談は許可されていません。":"うまく取得できませんでした。少し待ってからもう一度お試しください。"}
+  btn.disabled=false;
+}
+
+function phaseColor(name){return `var(${PHASE_COLORS[name]||"--ph-other"})`}
+
+function renderSched(){
+  const el=$("sched"); const list=wip();
+  if(!list.length){el.innerHTML=`<div class="empty"><div>制作中の作品はありません。<br>締切を入れると、ラフ・線画・着色・仕上げの期日を自動で割り振ります。</div><button class="btn" type="button" data-act="plan">制作を計画</button></div>`;return}
+  const t=today();
+  el.innerHTML=list.map(w=>{
+    const total=Math.max(diffDays(w.start,w.due),1);
+    let prev=w.start;
+    const cur=(w.phases||[]).find(p=>!p.done);
+    const segs=(w.phases||[]).map(p=>{const len=Math.max(diffDays(prev,p.due),0.4);prev=p.due;
+      return`<div class="seg ${p.done?"done":""} ${p===cur?"cur":""}" style="flex:${len};background:${phaseColor(p.name)}" title="${esc(p.name)} 〜${fmt(p.due)}">${esc(p.name)}</div>`}).join("");
+    const pos=diffDays(w.start,t)/total*100;
+    const left=diffDays(t,w.due);
+    let state; if(!cur) state=`<span class="chip ok">全工程完了</span>`;
+    else{const d=diffDays(t,cur.due); state= d<0?`<span class="chip warn">${esc(cur.name)} ${-d}日遅れ</span>`: `<span class="chip">${esc(cur.name)} あと${d}日</span>`;}
+    return`<div class="sched-item">
+      <div class="sched-head"><b>${esc(w.title)}</b>${state}</div>
+      <div class="bar">${segs}${pos>=0&&pos<=100?`<div class="today" style="left:${pos}%"></div>`:""}</div>
+      <div class="sched-meta"><span class="mono">${fmtFull(w.start)} → ${fmtFull(w.due)}</span><span>締切まで ${left>=0?left+"日":"<b style='color:var(--warn)'>"+(-left)+"日超過</b>"}</span>${cur&&left>=0?`<span>残り作業可能 <span class="mono">${remainHours(w)}</span>h</span>`:""}
+      <span class="sched-actions"><button class="btn sm ghost" type="button" data-edit="${w.id}">編集</button>${cur?`<button class="btn sm ${cur===w.phases[w.phases.length-1]?"":"primary"}" type="button" data-step="${w.id}">「${esc(cur.name)}」を完了</button>`:""}<button class="btn sm ${cur?"":"primary"}" type="button" data-finish="${w.id}">完成として記録</button></span></div>
+    </div>`}).join("");
+}
+
+function remainHours(w){const h=w.hours||settings.hours;let t=0;for(let d=today();diffDays(d,w.due)>=0;d=addDays(d,1))t+=dayHours(d,h);return Math.round(t*10)/10}
+
+function tileHTML(w){
+  const src=store?store.src(w):""; const ar=w.ar||arCache[w.id];
+  return`<button class="tile" type="button" data-open="${w.id}" aria-label="${esc(w.title)}（${fmtFull(w.completedAt)}）">
+    ${src?`<img src="${esc(src)}" alt="" loading="lazy" data-ar="${w.id}" ${ar?`style="aspect-ratio:1/${ar}"`:""}>`:`<div class="ph">${esc((w.title||"?").slice(0,1))}</div>`}
+    ${w.sample?`<span class="chip plain badge" style="background:var(--sheet)">サンプル</span>`:""}</button>`;
+}
+/* 石畳（Masonry）レイアウト：元の縦横比のまま、いちばん短い列に順に積む。左上から新しい順に読める。 */
+function layoutGrid(){
+  const g=$("grid"); if(!g)return;
+  if(!galList.length){return}
+  const width=g.clientWidth||window.innerWidth; const min=galBig?340:190;
+  const cols=Math.max(2,Math.min(6,Math.floor((width+6)/(min+6))));
+  const h=Array(cols).fill(0), b=[...Array(cols)].map(()=>[]);
+  galList.forEach(w=>{const i=h.indexOf(Math.min(...h));b[i].push(w);h[i]+=(store&&store.src(w)?(w.ar||arCache[w.id]||1):1)+0.03});
+  g.innerHTML=b.map(c=>`<div class="mcol">${c.map(tileHTML).join("")}</div>`).join("");
+  g.dataset.cols=cols;
+  g.querySelectorAll("img[data-ar]").forEach(img=>{const id=img.dataset.ar;const w=works.find(x=>x.id===id);if(w&&(w.ar||arCache[id]))return;
+    const set=()=>{if(img.naturalWidth){arCache[id]=img.naturalHeight/img.naturalWidth;relayoutSoon()}};img.complete?set():img.addEventListener("load",set,{once:true})});
+}
+let relayT; const relayoutSoon=()=>{clearTimeout(relayT);relayT=setTimeout(layoutGrid,120)};
+function presetRange(p){const t=new Date(),y=t.getFullYear(),m=t.getMonth();
+  if(p==="m1")return[ymd(new Date(y,m,1)),today()];
+  if(p==="m3")return[ymd(new Date(y,m-3,t.getDate())),today()];
+  if(p==="m6")return[ymd(new Date(y,m-6,t.getDate())),today()];
+  if(p==="y0")return[`${y}-01-01`,`${y}-12-31`];
+  if(p==="y1")return[`${y-1}-01-01`,`${y-1}-12-31`];
+  return null}
+function filtered(){
+  const q=filt.q.trim().toLowerCase();
+  return done().filter(w=>{
+    if(q&&![w.title,w.review&&w.review.good,w.review&&w.review.bad,(w.tags||[]).join(" ")].join(" ").toLowerCase().includes(q))return false;
+    const d=w.completedAt||"";
+    if(filt.from&&d<filt.from)return false;
+    if(filt.to&&d>filt.to)return false;
+    if(filt.tags.length){const has=w.tags||[];if(filt.mode==="all"?!filt.tags.every(t=>has.includes(t)):!filt.tags.some(t=>has.includes(t)))return false}
+    return true});
+}
+function syncFilterInputs(){$("fq").value=filt.q;$("fPreset").value=filt.preset;$("fFrom").value=filt.from;$("fTo").value=filt.to;$("fMode").value=filt.mode;$("sort").value=sortMode}
+function renderGrid(){
+  const tags=allTags(); filt.tags=filt.tags.filter(t=>tags.some(x=>x[0]===t));
+  $("fTags").innerHTML=tags.length?tags.map(([t,n])=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${filt.tags.includes(t)}">#${esc(t)}<span class="mono">${n}</span></button>`).join(""):`<span class="hint">作品にタグをつけると、ここで絞り込めます。</span>`;
+  const total=done().length; $("galCount").textContent=total||"";
+  let list=filtered();
+  const active=filt.q||filt.from||filt.to||filt.tags.length;
+  $("fResult").textContent=active?`${list.length} / ${total}作品`:`${total}作品`;
+  const chips=[];
+  if(filt.q)chips.push([`“${filt.q}”`,"q"]);
+  if(filt.from||filt.to){const lab={m1:"今月",m3:"過去3か月",m6:"過去6か月",y0:"今年",y1:"昨年"}[filt.preset]||`${filt.from?fmt(filt.from):""}〜${filt.to?fmt(filt.to):""}`;chips.push([lab,"date"])}
+  filt.tags.forEach(t=>chips.push(["#"+t,"tag:"+t]));
+  $("fChips").innerHTML=chips.map(([l,k])=>`<span class="fchip">${esc(l)}<button type="button" data-unf="${esc(k)}" aria-label="${esc(l)}の条件を外す">×</button></span>`).join("")+(chips.length>1?`<button type="button" class="linkbtn" data-unf="all">すべて解除</button>`:"");
+  const nf=(filt.from||filt.to?1:0)+filt.tags.length+(sortMode!=="new"?1:0);
+  $("fBadge").textContent=nf;$("fBadge").hidden=!nf;
+  if(sortMode==="old")list=list.slice().reverse();
+  if(sortMode==="score")list=list.slice().sort((a,b)=>(avg(b)||0)-(avg(a)||0));
+  galList=list;
+  if(list.length)layoutGrid();
+  else $("grid").innerHTML=total?`<div class="empty" style="flex:1"><div>条件に合う作品がありません。</div><button class="btn" type="button" id="fClear2">絞り込みを解除</button></div>`:`<div class="empty" style="flex:1"><div>完成した作品がここに並びます。</div><button class="btn primary" type="button" data-act="add">最初の作品を記録</button></div>`;
+  const c2=$("fClear2");if(c2)c2.onclick=clearFilter;
+}
+
+/* ============ 成長の記録 ============ */
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function metricOf(w){if(metric==="avg")return avg(w);const v=w.review&&w.review.scores&&w.review.scores[metric];return v>0?v:null}
+function renderGrowth(){
+  const el=$("growth"); const list=done().slice().reverse(); // 古い順
+  const sel=`<select id="metric" aria-label="表示する項目" style="width:auto"><option value="avg">全項目の平均</option>${axes().map(a=>`<option value="${a.key}" ${metric===a.key?"selected":""}>${esc(a.label)}</option>`).join("")}</select>`;
+  if(list.length<1){el.innerHTML=`<h2>成長の記録</h2><div class="empty"><div>作品を記録すると、自己評価の推移・課題の達成度・締切の守り具合がここに出ます。</div></div>`;return}
+  const avgs=list.map(avg).filter(x=>x!=null);
+  const last5=mean(avgs.slice(-5)), prev5=mean(avgs.slice(-10,-5));
+  const refl=list.filter(w=>w.reflection&&w.reflection.achieved);
+  const achAvg=mean(refl.map(w=>w.reflection.achieved));
+  const sch=list.filter(w=>w.start&&w.due&&w.completedAt);
+  const onTime=sch.filter(w=>diffDays(w.completedAt,w.due)>=0).length;
+  const delta=last5!=null&&prev5!=null?last5-prev5:null;
+  el.innerHTML=`<h2><span>成長の記録</span></h2>
+  <div class="tiles">
+    <div class="stat"><span class="label">記録した作品</span><b>${list.length}</b><span class="d">${list.length?fmtFull(list[0].completedAt)+" から":""}</span></div>
+    <div class="stat"><span class="label">直近5作の平均点</span><b>${last5!=null?last5.toFixed(2):"—"}</b><span class="d">${delta!=null?`その前の5作より ${delta>=0?"+":""}${delta.toFixed(2)}`:"5作以上で比較を表示"}</span></div>
+    <div class="stat"><span class="label">課題の平均達成度</span><b>${achAvg!=null?achAvg.toFixed(1):"—"}<span style="font-size:13px"> / 5</span></b><span class="d">${refl.length}回のふり返り</span></div>
+    <div class="stat"><span class="label">締切内に完成</span><b>${sch.length?onTime+"<span style='font-size:13px'> / "+sch.length+"</span>":"—"}</b><span class="d">${sch.length?"スケジュールを組んだ作品":"計画から完成させると集計"}</span></div>
+  </div>
+  <div class="growth-grid">
+    <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="label">自己評価の推移</span>${sel}</div>
+      <div class="chart-wrap" id="chartWrap">${lineChart(list)}</div>
+      <details><summary>数値で見る</summary><div class="tbl-wrap"><table class="data-table"><thead><tr><th>完成日</th><th>作品</th>${axes().map(a=>`<th>${esc(a.label)}</th>`).join("")}<th>平均</th></tr></thead><tbody>${
+        list.slice().reverse().map(w=>`<tr><td class="mono">${fmtFull(w.completedAt)}</td><td>${esc(w.title)}</td>${axes().map(a=>`<td class="n">${(w.review&&w.review.scores&&w.review.scores[a.key])||"-"}</td>`).join("")}<td class="n">${avg(w)!=null?avg(w).toFixed(1):"-"}</td></tr>`).join("")}</tbody></table></div></details>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+      <span class="label">課題の達成度</span>
+      <div class="ach">${refl.length?refl.slice(-6).reverse().map(w=>`<div class="ach-row"><span class="c">${esc(w.reflection.challenge&&w.reflection.challenge.text)}</span>
+        <span class="m" role="img" aria-label="達成度${w.reflection.achieved}/5">${[1,2,3,4,5].map(n=>`<i class="${n<=w.reflection.achieved?"on":""}"></i>`).join("")}</span>
+        <span class="w">${fmtFull(w.completedAt)}「${esc(w.title)}」でふり返り</span></div>`).join(""):`<p class="hint">前回の課題をふり返ると、ここに達成度が並びます。</p>`}</div>
+    </div>
+  </div>`;
+  $("metric").value=metric;
+  $("metric").onchange=e=>{metric=e.target.value;$("chartWrap").innerHTML=lineChart(done().slice().reverse());bindChart()};
+  bindChart();
+}
+function lineChart(list){
+  const pts=list.map(w=>({w,v:metricOf(w)})).filter(p=>p.v!=null);
+  if(pts.length<2)return`<p class="hint">2作以上記録すると推移のグラフが出ます。</p>`;
+  const W=600,H=220,L=28,Rt=14,T=14,B=28;
+  const x=i=>L+(pts.length===1?0:(W-L-Rt)*i/(pts.length-1)), y=v=>T+(H-T-B)*(5-v)/4;
+  const grid=[1,2,3,4,5].map(v=>`<line x1="${L}" x2="${W-Rt}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join("");
+  const line=pts.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  const area=`${line}L${x(pts.length-1)},${y(1)}L${x(0)},${y(1)}Z`;
+  const step=Math.ceil(pts.length/6);
+  const xl=pts.map((p,i)=>(i%step===0||i===pts.length-1)?`<text x="${x(i)}" y="${H-8}" text-anchor="${i===0?"start":i===pts.length-1?"end":"middle"}">${fmt(p.w.completedAt)}</text>`:"").join("");
+  const dots=pts.map((p,i)=>{const lastP=i===pts.length-1;return`<circle cx="${x(i)}" cy="${y(p.v)}" r="${lastP?5:3.5}" fill="${lastP?"var(--accent)":"var(--sheet)"}" stroke="var(--accent)" stroke-width="2"/>`}).join("");
+  const hits=pts.map((p,i)=>`<rect class="hit" x="${x(i)-Math.max(12,(W-L-Rt)/pts.length/2)}" y="${T}" width="${Math.max(24,(W-L-Rt)/pts.length)}" height="${H-T-B}" fill="transparent" data-i="${i}" data-x="${x(i)}" data-y="${y(p.v)}" data-t="${esc(p.w.title)}" data-d="${fmtFull(p.w.completedAt)}" data-v="${p.v.toFixed(1)}"/>`).join("");
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="自己評価の推移"><g class="grid">${grid}</g>
+    <path d="${area}" fill="var(--accent)" fill-opacity=".08"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    <line id="cross" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--ink-2)" stroke-dasharray="3 3" visibility="hidden"/>${dots}${xl}${hits}</svg><div class="tip" id="tip" hidden></div>`;
+}
+function bindChart(){
+  const wrap=$("chartWrap"),svg=wrap&&wrap.querySelector("svg");if(!svg)return;const tip=$("tip"),cross=$("cross");
+  const show=r=>{const k=svg.getBoundingClientRect().width/600;tip.innerHTML=`<b>${r.dataset.v}</b> ${r.dataset.t}<br><span style="opacity:.7">${r.dataset.d}</span>`;
+    tip.style.left=Math.min(Math.max(+r.dataset.x*k,70),wrap.clientWidth-70)+"px";tip.style.top=(+r.dataset.y*k)+"px";tip.hidden=false;
+    cross.setAttribute("x1",r.dataset.x);cross.setAttribute("x2",r.dataset.x);cross.setAttribute("visibility","visible")};
+  svg.querySelectorAll(".hit").forEach(r=>{r.addEventListener("pointerenter",()=>show(r));r.addEventListener("click",()=>show(r))});
+  svg.addEventListener("pointerleave",()=>{tip.hidden=true;cross.setAttribute("visibility","hidden")});
+}
+
+/* ============ ダイアログ ============ */
+const dlg=$("dlg");
+/* ダイアログ表示中は後ろの画面を固定（iPhoneのSafariは overflow:hidden だけでは止まらないため position:fixed で固定） */
+let lockY=0;
+function lockScroll(){if(document.body.style.position==="fixed")return;lockY=window.scrollY;const b=document.body.style;b.position="fixed";b.top=`-${lockY}px`;b.left="0";b.right="0";document.documentElement.style.overflow="hidden"}
+function unlockScroll(){if(document.body.style.position!=="fixed")return;const b=document.body.style;b.position=b.top=b.left=b.right="";document.documentElement.style.overflow="";const y=lockY;window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y))}
+dlg.addEventListener("close",unlockScroll);
+function openDlg(html,onMount){dlg.onkeydown=null;$("dlgInner").innerHTML=html;if(!dlg.open){lockScroll();dlg.showModal()}onMount&&onMount();$("dlgInner").querySelector(".dlg-body").scrollTop=0}
+function closeDlg(){dlg.close()}
+dlg.addEventListener("click",e=>{if(e.target===dlg)closeDlg()});
+const head=t=>`<div class="dlg-head"><h3>${t}</h3><button class="btn ghost sm" type="button" data-close>閉じる</button></div>`;
+
+function scaleHTML(key,val){return`<div class="scale" data-scale="${key}">${[1,2,3,4,5].map(n=>`<button type="button" data-v="${n}" class="${val===n?"on":""}" aria-label="${n}点">${n}</button>`).join("")}</div>`}
+
+function catOptions(sel){return Object.entries(ADVICE).map(([k,a])=>`<option value="${k}" ${k===sel?"selected":""}>${a.label}（${a.hint}）</option>`).join("")}
+
+/* 課題候補：今回の点数と直近3作の点数を平均し、低い項目から最大3つ */
+function suggestions(scores,selfId){
+  const hist=done().filter(w=>w.id!==selfId).slice(0,3);
+  const rows=axes().map(a=>{const vals=[scores[a.key],...hist.map(w=>w.review&&w.review.scores&&w.review.scores[a.key])].filter(x=>x>0);
+    return vals.length?{a,m:vals.reduce((x,y)=>x+y,0)/vals.length,n:vals.length}:null}).filter(Boolean).sort((x,y)=>x.m-y.m);
+  if(!rows.length)return[];
+  return rows.slice(0,3).filter(r=>r.m<=rows[0].m+1).map(r=>{const cat=ADVICE[r.a.cat]?r.a.cat:"other";const pr=ADVICE[cat].practices[0][1];
+    return{cat,label:r.a.label,m:r.m,basis:r.n>1?`今回＋直近${r.n-1}作`:"今回のみ",text:`「${r.a.label}」を重点的に：${pr}をしてから描く`}});
+}
+
+/* --- 完成作品の記録（新規 or 制作中から） --- */
+function openRecord(existing){
+  const w=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),title:"",createdAt:today()};
+  const editingDone=existing&&existing.status==="done";
+  const prev=editingDone? (w.reflection&&w.reflection.fromId? works.find(x=>x.id===w.reflection.fromId):null) : latestChallenge();
+  const prevCh= editingDone? (w.reflection&&w.reflection.challenge) : (prev&&prev.nextChallenge);
+  const scores={...(w.review&&w.review.scores||{})}; const refl={achieved:(w.reflection&&w.reflection.achieved)||0};
+  let pendingBlob=null;
+  const curSrc=store.src(w);
+  openDlg(`${head(editingDone?"作品を編集":"完成作品を記録")}
+  <form class="dlg-body" id="recForm">
+    <fieldset><legend><span class="n">1</span>作品</legend>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="画像を選ぶ">
+        <img id="preview" src="${esc(curSrc)}" alt="" ${curSrc?"":"hidden"}>
+        <div class="muted" style="font-size:14px">画像をドロップ、またはクリックして選択<br><span style="font-size:12px">PNG / JPEG / WebP。長辺2400pxに縮小して保存します。</span></div>
+        <input type="file" id="file" accept="image/*" hidden>
+      </div>
+      <div class="row">
+        <div class="f"><label for="rTitle">タイトル</label><input type="text" id="rTitle" value="${esc(w.title)}" required></div>
+        <div class="f"><label for="rDate">完成日</label><input type="date" id="rDate" value="${esc(w.completedAt||today())}"></div>
+      </div>
+      <div class="f"><label for="rTag">タグ（任意）</label>
+        <div class="tag-input" id="tagBox"><input type="text" id="rTag" list="tagList" placeholder="入力してEnter（例：オリジナル、模写、厚塗り）" enterkeyhint="done"></div>
+        <datalist id="tagList">${allTags().map(([t])=>`<option value="${esc(t)}">`).join("")}</datalist></div>
+    </fieldset>
+
+    ${prevCh?`<fieldset><legend><span class="n">2</span>前回の課題の反省</legend>
+      <div class="prev-box"><span class="label">前回の課題（${esc((ADVICE[prevCh.category]||ADVICE.other).label)}）</span><b>${esc(prevCh.text)}</b></div>
+      <div class="stars"><span>達成度</span>${scaleHTML("achieved",refl.achieved)}</div>
+      <div class="f"><label for="rRefl">できたこと・できなかったこと</label><textarea id="rRefl" placeholder="例：手を隠さずに描けたが、指の長さがバラバラになった">${esc(w.reflection&&w.reflection.text)}</textarea></div>
+    </fieldset>`:""}
+
+    <fieldset><legend><span class="n">${prevCh?3:2}</span>自己評価</legend>
+      <div class="stars">${axes().map(a=>`<span>${esc(a.label)}</span>${scaleHTML(a.key,scores[a.key]||0)}`).join("")}</div>
+      <div class="row">
+        <div class="f"><label for="rGood">良かった点</label><textarea id="rGood">${esc(w.review&&w.review.good)}</textarea></div>
+        <div class="f"><label for="rBad">気になった点</label><textarea id="rBad">${esc(w.review&&w.review.bad)}</textarea></div>
+      </div>
+    </fieldset>
+
+    <fieldset><legend><span class="n">${prevCh?4:3}</span>次の作品の課題（ひとつだけ）</legend>
+      ${settings.suggest?`<div class="f"><span class="label">候補（自己評価が低い項目から）</span><div class="sugg" id="sugg"></div></div>`:""}
+      <div class="f"><label for="rCat">分類</label><select id="rCat">${catOptions(w.nextChallenge&&w.nextChallenge.category||"anatomy")}</select></div>
+      <div class="f"><label for="rNext">課題</label><input type="text" id="rNext" value="${esc(w.nextChallenge&&w.nextChallenge.text)}" placeholder="例：手を隠さずに、物を持たせて描く"></div>
+      <div><div class="label" style="margin-bottom:6px">この分類のおすすめ練習</div><div id="advPrev">${practicesHTML(w.nextChallenge&&w.nextChallenge.category||"anatomy")}</div></div>
+    </fieldset>
+  </form>
+  <div class="dlg-foot">${editingDone?`<button class="btn danger" type="button" id="btnDel" style="margin-right:auto">削除</button>`:""}<button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="btnSave">保存</button></div>`,
+  ()=>{
+    const root=$("dlgInner");
+    root.querySelectorAll("[data-scale]").forEach(s=>s.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const k=s.dataset.scale,v=+b.dataset.v;
+      const tgt=k==="achieved"?refl:scores; tgt[k]=tgt[k]===v?0:v; s.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.v===tgt[k]));if(k!=="achieved")drawSugg()}));
+    $("rCat").onchange=e=>{$("advPrev").innerHTML=practicesHTML(e.target.value)};
+    const tags=[...(w.tags||[])]; const tagIn=$("rTag"),tagBox=$("tagBox");
+    const drawTags=()=>{tagBox.querySelectorAll(".tag").forEach(x=>x.remove());
+      tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tag";sp.innerHTML=`#${esc(t)}<button type="button" aria-label="${esc(t)}を外す" data-rmt="${i}">×</button>`;tagBox.insertBefore(sp,tagIn)})};
+    const addTag=()=>{tagIn.value.split(/[,、，\s]+/).map(x=>x.replace(/^#/,"").trim()).filter(Boolean).forEach(t=>{if(!tags.includes(t)&&t.length<=30)tags.push(t)});tagIn.value="";drawTags()};
+    tagIn.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===",")&&!e.isComposing){e.preventDefault();addTag()}else if(e.key==="Backspace"&&!tagIn.value&&tags.length){tags.pop();drawTags()}});
+    tagIn.addEventListener("change",()=>{if(tagIn.value&&[...$("tagList").options].some(o=>o.value===tagIn.value))addTag()});
+    tagIn.addEventListener("blur",addTag);
+    tagBox.addEventListener("click",e=>{const b=e.target.closest("[data-rmt]");if(b){tags.splice(+b.dataset.rmt,1);drawTags()}else tagIn.focus()});
+    drawTags();
+    const drawSugg=()=>{const el=$("sugg");if(!el)return;const list=suggestions(scores,existing&&existing.id);
+      el.innerHTML=list.length?list.map((x,i)=>`<button type="button" data-sg="${i}">${esc(x.text)}<small>${esc(x.label)} 平均${x.m.toFixed(1)}点（${x.basis}）</small></button>`).join(""):`<span class="hint">自己評価をつけると、点数の低い項目から課題の候補を出します。</span>`;
+      el.onclick=e=>{const b=e.target.closest("[data-sg]");if(!b)return;const x=list[+b.dataset.sg];$("rCat").value=x.cat;$("rNext").value=x.text;$("advPrev").innerHTML=practicesHTML(x.cat)}};
+    drawSugg();
+    const drop=$("drop"),file=$("file");
+    const take=async f=>{if(!f||!f.type.startsWith("image/"))return;pendingBlob=await shrink(f);$("preview").src=URL.createObjectURL(pendingBlob);$("preview").hidden=false;
+      if(!$("rTitle").value)$("rTitle").value=f.name.replace(/\.[^.]+$/,"")};
+    drop.onclick=()=>file.click(); drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();file.click()}};
+    file.onchange=()=>take(file.files[0]);
+    drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")}; drop.ondragleave=()=>drop.classList.remove("over");
+    drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");take(e.dataTransfer.files[0])};
+    if($("btnDel"))$("btnDel").onclick=()=>confirmDelete(existing);
+    $("btnSave").onclick=async()=>{
+      const title=$("rTitle").value.trim(); if(!title){$("rTitle").focus();toast("タイトルを入れてください");return}
+      const btn=$("btnSave");btn.disabled=true;btn.textContent="保存中…";
+      try{
+        if(pendingBlob){const r=await store.upload(pendingBlob);w.imageId=r.imageId;w.imageUrl=r.imageUrl;
+          try{const bm=await createImageBitmap(pendingBlob);w.ar=Math.round(bm.height/bm.width*1000)/1000}catch(_){}}
+        addTag(); w.tags=tags;
+        w.title=title;w.status="done";w.completedAt=$("rDate").value||today();
+        const used=new Set(axes().map(a=>a.key));Object.keys(scores).forEach(k=>{if(!used.has(k)&&!(w.review&&w.review.labels&&w.review.labels[k]))delete scores[k]});
+        w.review={scores,labels:{...((w.review&&w.review.labels)||{}),...Object.fromEntries(axes().map(a=>[a.key,a.label]))},good:$("rGood").value,bad:$("rBad").value};
+        if(prevCh) w.reflection={fromId:editingDone?(w.reflection&&w.reflection.fromId):prev.id,challenge:prevCh,achieved:refl.achieved,text:$("rRefl").value};
+        const nt=$("rNext").value.trim(); w.nextChallenge=nt?{category:$("rCat").value,text:nt}:null;
+        w.updatedAt=new Date().toISOString(); delete w.sample;
+        await store.save(w); closeDlg(); toast("保存しました");
+      }catch(e){console.error(e);btn.disabled=false;btn.textContent="保存";toast(e&&e.code==="too_large"?"画像が大きすぎます（20MBまで）":"保存できませんでした。もう一度お試しください")}
+    };
+  });
+}
+
+/* 実績からの配分提案：工程ごとに「実際に使えた作業時間」を出し、作品内での割合を工程名ごとに平均する。
+   工程の区切りは各工程の完了日（最後の工程は完成日でも可）。直近5作まで。 */
+function phaseActuals(w){
+  const ph=w.phases||[]; if(!w.start||ph.length<2)return null;
+  const ends=ph.map((p,i)=>p.doneAt||(i===ph.length-1?w.completedAt:null));
+  if(ends.some(e=>!e))return null;
+  const h=w.hours||settings.hours; let prev=null; const out=[];
+  for(let i=0;i<ph.length;i++){
+    let from=prev?addDays(prev,1):w.start, to=ends[i]; let hrs=0;
+    for(let d=from;diffDays(d,to)>=0;d=addDays(d,1))hrs+=dayHours(d,h);
+    if(hrs<=0)hrs=Math.max(0.5,dayHours(to,h)*0.5); // 同じ日に複数工程を終えた場合は半日分とみなす
+    const planned=ph[i].due?diffDays(ph[i].due,ends[i]):null;
+    out.push({name:ph[i].name,hours:hrs,late:planned});prev=diffDays(prev||w.start,to)>=0?to:prev;
+  }
+  const tot=out.reduce((a,x)=>a+x.hours,0);
+  return out.map(x=>({...x,share:x.hours/tot*100}));
+}
+function suggestShares(phases){
+  const src=works.filter(w=>w.status==="done").sort((a,b)=>(b.completedAt||"").localeCompare(a.completedAt||"")).map(w=>({w,a:phaseActuals(w)})).filter(x=>x.a).slice(0,5);
+  if(!src.length)return null;
+  const stat={};src.forEach(({a})=>a.forEach(x=>{(stat[x.name]=stat[x.name]||{s:[],l:[]}).s.push(x.share);if(x.late!=null)stat[x.name].l.push(x.late)}));
+  const known=phases.filter(p=>stat[p.name]); if(!known.length)return null;
+  // 実績がない工程は今の配分を据え置き、実績のある工程で残りを按分
+  const unknownW=phases.filter(p=>!stat[p.name]).reduce((a,p)=>a+(+p.w||0),0);
+  const raw=phases.map(p=>stat[p.name]?mean(stat[p.name].s):null);
+  const rawSum=raw.reduce((a,v)=>a+(v||0),0);
+  let vals=phases.map((p,i)=>raw[i]==null?(+p.w||0):Math.max(5,Math.round(raw[i]/rawSum*(100-unknownW)/5)*5));
+  const diff=100-vals.reduce((a,b)=>a+b,0); if(diff){const k=vals.indexOf(Math.max(...vals));vals[k]+=diff}
+  return{n:src.length,vals,late:phases.map(p=>stat[p.name]&&stat[p.name].l.length?mean(stat[p.name].l):null)};
+}
+
+/* --- 制作の計画（スケジュール） --- */
+function openPlan(existing){
+  const w=existing?clone(existing):{id:uid(),title:"",status:"wip",createdAt:today(),start:today(),due:addDays(today(),14),
+    phases:settings.phases.map(p=>({...p,done:false})),hours:{...settings.hours}};
+  if(!w.hours)w.hours={...settings.hours};
+  let phases=w.phases.map(p=>({name:p.name,w:+p.w||0,done:!!p.done,due:p.due}));
+  let info=null;
+  const recompute=()=>{w.start=$("pStart").value;w.due=$("pDue").value;
+    w.hours={weekday:+$("pWd").value||0,holiday:+$("pHd").value||0};
+    if(!w.start||!w.due||diffDays(w.start,w.due)<0){$("pSum").textContent="締切は開始日より後にしてください";return}
+    info=allocate(w.start,w.due,phases,w.hours);phases=info.phases;drawTable()};
+  const drawTable=()=>{
+    const totalW=phases.reduce((a,p)=>a+(+p.w||0),0);
+    $("pTable").innerHTML=`<thead><tr><th>工程</th><th>配分%</th><th>作業時間</th><th>期日</th><th>完了</th><th></th></tr></thead><tbody>${
+      phases.map((p,i)=>`<tr>
+      <td><span class="dot" style="background:${phaseColor(p.name)}"></span><input type="text" value="${esc(p.name)}" data-i="${i}" data-k="name" style="width:96px;padding:4px 6px" aria-label="工程名"></td>
+      <td><input type="number" min="0" max="100" step="5" value="${p.w}" data-i="${i}" data-k="w" aria-label="配分"></td>
+      <td class="mono">${p.hours!=null?p.hours.toFixed(1)+"h":"—"}</td>
+      <td class="mono">〜${fmt(p.due)}（${p.due?WEEK[parse(p.due).getDay()]:""}）</td>
+      <td><input type="checkbox" ${p.done?"checked":""} data-i="${i}" data-k="done" aria-label="完了"></td>
+      <td><button type="button" class="btn sm ghost" data-rm="${i}" aria-label="工程を削除">×</button></td></tr>`).join("")}</tbody>`;
+    const sg=suggestShares(phases);
+    $("pSuggest").innerHTML=!sg?`<p class="hint">工程を「完了」ボタンで進めて作品を完成させると、実際にかかった時間から配分を提案します。</p>`:
+      (sg.vals.every((v,i)=>v===(+phases[i].w||0))?`<p class="hint">今の配分は過去${sg.n}作の実績どおりです。</p>`:
+      `<div class="suggest-box"><span class="label">過去${sg.n}作の実績からの提案</span>
+       <div class="vals">${phases.map((p,i)=>`<span>${esc(p.name)} <b>${sg.vals[i]}%</b>${sg.vals[i]!==(+p.w||0)?`<span class="diff">（今 ${p.w}%）</span>`:""}</span>`).join("")}</div>
+       ${sg.late.some(x=>x!=null&&Math.abs(x)>=1)?`<span class="diff">予定との差：${phases.map((p,i)=>sg.late[i]!=null&&Math.abs(sg.late[i])>=1?`${esc(p.name)}は平均${Math.abs(sg.late[i]).toFixed(1)}日${sg.late[i]>0?"遅れ":"早く完了"}`:null).filter(Boolean).join("、")}</span>`:""}
+       <div><button class="btn sm primary" type="button" id="pUseSg">この配分を使う</button></div></div>`);
+    const us=$("pUseSg"); if(us)us.onclick=()=>{phases=phases.map((p,i)=>({...p,w:sg.vals[i]}));recompute();toast("実績の配分にしました")};
+    $("pSum").innerHTML=`配分合計 <b class="mono" style="color:${totalW===100?"inherit":"var(--warn)"}">${totalW}%</b>${totalW===100?"":"（100%になるよう比率で計算します）"} ・ 全${info.days}日（平日${info.weekdays}日・休日${info.holidays}日） ・ 作業可能 <b class="mono">${Math.round(info.H*10)/10}h</b>`;
+  };
+  openDlg(`${head(existing?"スケジュールを編集":"制作を計画")}
+  <div class="dlg-body">
+    <fieldset><legend>作品</legend>
+      <div class="f"><label for="pTitle">タイトル（仮でOK）</label><input type="text" id="pTitle" value="${esc(w.title)}" placeholder="例：秋の制服イラスト"></div>
+      <div class="row">
+        <div class="f"><label for="pStart">開始日</label><input type="date" id="pStart" value="${esc(w.start)}"></div>
+        <div class="f"><label for="pDue">完成させる日</label><input type="date" id="pDue" value="${esc(w.due)}"></div>
+      </div>
+      <div class="row">
+        <div class="f"><label for="pWd">平日の作業時間（h/日）</label><input type="text" inputmode="decimal" id="pWd" value="${w.hours.weekday}"></div>
+        <div class="f"><label for="pHd">休日の作業時間（h/日）</label><input type="text" inputmode="decimal" id="pHd" value="${w.hours.holiday}"></div>
+      </div>
+      ${(()=>{const c=latestChallenge();return c?`<div class="prev-box"><span class="label">この作品で取り組む課題</span><b>${esc(c.nextChallenge.text)}</b></div>`:""})()}
+    </fieldset>
+    <fieldset><legend>工程と期日</legend>
+      <p class="hint" id="pSum"></p>
+      <div id="pSuggest"></div>
+      <p class="hint">期日は「作業可能時間の合計 × 配分%」から自動で計算します。休日（${settings.holidays.map(d=>WEEK[d]).join("・")||"なし"}）は作業時間が長い前提です。初期値は「設定」で変えられます。</p>
+      <div class="tbl-wrap"><table class="phase-table" id="pTable"></table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="pAddPh">＋ 工程を追加</button><button class="btn sm ghost" type="button" id="pReset">設定の初期値に戻す</button></div>
+    </fieldset>
+  </div>
+  <div class="dlg-foot">${existing?`<button class="btn danger" type="button" id="btnDel" style="margin-right:auto">削除</button>`:""}<button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="pSave">保存</button></div>`,
+  ()=>{
+    recompute();
+    ["pStart","pDue","pWd","pHd"].forEach(id=>$(id).addEventListener("change",recompute));
+    const tbl=$("pTable");
+    tbl.addEventListener("change",e=>{const t=e.target,i=+t.dataset.i,k=t.dataset.k;if(isNaN(i))return;
+      if(k==="w"){phases[i].w=Math.max(0,+t.value||0);recompute()}
+      else if(k==="done"){phases[i].done=t.checked}
+      else if(k==="name"){phases[i].name=t.value;drawTable()}});
+    tbl.addEventListener("click",e=>{const rm=e.target.closest("[data-rm]");if(rm&&phases.length>1){phases.splice(+rm.dataset.rm,1);recompute()}});
+    $("pAddPh").onclick=()=>{phases.splice(phases.length-1,0,{name:"新しい工程",w:10,done:false});recompute()};
+    $("pReset").onclick=()=>{phases=settings.phases.map(p=>({...p,done:false}));$("pWd").value=settings.hours.weekday;$("pHd").value=settings.hours.holiday;recompute()};
+    if($("btnDel"))$("btnDel").onclick=()=>confirmDelete(existing);
+    $("pSave").onclick=async()=>{
+      const title=$("pTitle").value.trim();if(!title){$("pTitle").focus();toast("タイトルを入れてください");return}
+      if(!w.start||!w.due||diffDays(w.start,w.due)<0){toast("締切は開始日より後にしてください");return}
+      w.title=title;w.phases=phases;w.updatedAt=new Date().toISOString();
+      try{await store.save(w);closeDlg();toast("スケジュールを保存しました")}catch(e){console.error(e);toast("保存できませんでした")}
+    };
+  });
+}
+
+/* --- 設定 --- */
+function openSettings(){
+  const st=clone(settings);
+  const catSel=(v,i)=>`<select data-i="${i}" data-k="cat" aria-label="対応する練習の分類">${Object.entries(ADVICE).map(([k,a])=>`<option value="${k}" ${k===v?"selected":""}>練習：${a.label}</option>`).join("")}</select>`;
+  let sorting=false;
+  const drawAxes=()=>{const ax=$("sAxes");ax.classList.toggle("sorting",sorting);$("sSort").textContent=sorting?"並び替えを終える":"並び替え";$("sSort").classList.toggle("primary",sorting);
+    $("sAddAx").hidden=$("sResetAx").hidden=sorting;
+    $("sHint").textContent=sorting?"項目をドラッグして順番を変えてください。終わったら「並び替えを終える」を押します。":"項目名と、点数が低いときに出す練習の分類を選べます。項目を消しても、過去の作品についた点数は残ります。";
+    if(sorting){ax.innerHTML=st.axes.map((a,i)=>`<div class="set-row" data-idx="${i}"><button type="button" class="handle" aria-label="${esc(a.label)}（矢印キーで移動）">⠿</button><b>${esc(a.label)}</b></div>`).join("");return}
+    ax.innerHTML=st.axes.map((a,i)=>`<div class="set-row" data-idx="${i}">
+      <input type="text" value="${esc(a.label)}" data-i="${i}" data-k="label" aria-label="項目名">${catSel(a.cat,i)}
+      <span class="ctl"><button type="button" class="btn sm ghost" data-rmx="${i}" aria-label="削除" ${st.axes.length>1?"":"disabled"}>×</button></span></div>`).join("")};
+  const drawPh=()=>{const t=st.phases.reduce((a,p)=>a+(+p.w||0),0);
+    $("sPh").innerHTML=st.phases.map((p,i)=>`<div class="set-row ph"><input type="text" value="${esc(p.name)}" data-i="${i}" data-k="name" aria-label="工程名">
+      <input type="number" min="0" max="100" step="5" value="${p.w}" data-i="${i}" data-k="w" aria-label="配分%">
+      <span class="ctl"><button type="button" class="btn sm ghost" data-rmp="${i}" aria-label="削除" ${st.phases.length>1?"":"disabled"}>×</button></span></div>`).join("")+
+      `<p class="hint">合計 <b class="mono" style="color:${t===100?"inherit":"var(--warn)"}">${t}%</b></p>`};
+  openDlg(`${head("設定")}
+  <div class="dlg-body">
+    <fieldset><legend>データの保存とバックアップ</legend>
+      <p class="hint">保存先：<b>${storagePref()==="gdrive"?"Googleドライブ（PCと連携）":"この端末のみ"}</b> ・ 最後のバックアップ：<b>${lastBackup()?fmtFull(lastBackup()):"まだありません"}</b></p>
+      <div><button class="btn sm" type="button" id="sStorage">保存先とバックアップを開く</button></div>
+    </fieldset>
+    <fieldset><legend>表示</legend>
+      <div class="days" role="radiogroup" aria-label="画面の明るさ" style="gap:6px">${[["light","ライト"],["dark","ダーク"],["auto","端末に合わせる"]].map(([v,l])=>`<label style="width:auto;padding:0 14px"><input type="radio" name="sTheme" value="${v}" ${themePref===v?"checked":""}>${l}</label>`).join("")}</div>
+      <p class="hint">この端末だけに反映され、すぐ切り替わります。背景は作品の色に影響しないよう、色みのないグレーにしています。</p>
+    </fieldset>
+    <fieldset><legend>自己評価の項目</legend>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><p class="hint" id="sHint"></p><button class="btn sm" type="button" id="sSort">並び替え</button></div>
+      <div class="set-list" id="sAxes"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="sAddAx">＋ 項目を追加</button><button class="btn sm ghost" type="button" id="sResetAx">初期の6項目に戻す</button></div>
+    </fieldset>
+    <fieldset><legend>課題決めの補助</legend>
+      <label class="toggle"><input type="checkbox" id="sSuggest" ${st.suggest?"checked":""}><span>自己評価の低い項目から課題の候補を出す<br><span class="hint">オフにすると、課題は自分で書くだけになります。</span></span></label>
+    </fieldset>
+    <fieldset><legend>1日の作業可能時間</legend>
+      <div class="row">
+        <div class="f"><label for="sWd">平日（h/日）</label><input type="text" inputmode="decimal" id="sWd" value="${st.hours.weekday}"></div>
+        <div class="f"><label for="sHd">休日（h/日）</label><input type="text" inputmode="decimal" id="sHd" value="${st.hours.holiday}"></div>
+      </div>
+      <div class="f"><span class="label">休日にする曜日</span><div class="days">${WEEK.map((d,i)=>`<label><input type="checkbox" value="${i}" ${st.holidays.includes(i)?"checked":""} data-day>${d}</label>`).join("")}</div></div>
+    </fieldset>
+    <fieldset><legend>工程と配分の初期値</legend>
+      <p class="hint">新しく制作を計画するときに使います。作品ごとに変更もできます。</p>
+      <div class="set-list" id="sPh"></div>
+      <div><button class="btn sm" type="button" id="sAddPh">＋ 工程を追加</button></div>
+    </fieldset>
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="sSave">保存</button></div>`,
+  ()=>{
+    drawAxes();drawPh();
+    document.querySelectorAll('input[name="sTheme"]').forEach(r=>r.onchange=()=>setTheme(r.value));
+    $("sStorage").onclick=openStorage;
+    const ax=$("sAxes"),ph=$("sPh");
+    ax.addEventListener("change",e=>{const t=e.target,i=+t.dataset.i;if(isNaN(i))return;st.axes[i][t.dataset.k]=t.value});
+    ax.addEventListener("click",e=>{const rm=e.target.closest("[data-rmx]");if(rm){st.axes.splice(+rm.dataset.rmx,1);drawAxes()}});
+    // ドラッグ＆ドロップ（マウス・タッチ共通）。行の順番をDOM上で入れ替え、離したときに st.axes に反映
+    const commitOrder=()=>{st.axes=[...ax.children].map(r=>st.axes[+r.dataset.idx])};
+    $("sSort").onclick=()=>{sorting=!sorting;drawAxes()};
+    let drag=null;
+    ax.addEventListener("pointerdown",e=>{if(!sorting||e.button>0)return;const row=e.target.closest(".set-row");if(!row)return;e.preventDefault();
+      drag={row};row.classList.add("dragging");row.setPointerCapture(e.pointerId)});
+    ax.addEventListener("pointermove",e=>{if(!drag)return;
+      const rows=[...ax.children].filter(r=>r!==drag.row);
+      const next=rows.find(r=>{const b=r.getBoundingClientRect();return e.clientY<b.top+b.height/2})||null;
+      if(next!==drag.row.nextElementSibling)ax.insertBefore(drag.row,next)});
+    const endDrag=()=>{if(!drag)return;const i=[...ax.children].indexOf(drag.row);drag.row.classList.remove("dragging");drag=null;commitOrder();drawAxes();ax.children[i].querySelector(".handle").focus()};
+    ax.addEventListener("pointerup",endDrag);ax.addEventListener("pointercancel",endDrag);
+    ax.addEventListener("keydown",e=>{const h=e.target.closest(".handle");if(!h||!["ArrowUp","ArrowDown"].includes(e.key))return;e.preventDefault();
+      const row=h.closest(".set-row");const sib=e.key==="ArrowUp"?row.previousElementSibling:row.nextElementSibling;if(!sib)return;
+      ax.insertBefore(row,e.key==="ArrowUp"?sib:sib.nextElementSibling);const i=[...ax.children].indexOf(row);commitOrder();drawAxes();ax.children[i].querySelector(".handle").focus()});
+    $("sAddAx").onclick=()=>{st.axes.push({key:"c_"+uid(),label:"新しい項目",cat:"other"});drawAxes();const l=ax.querySelectorAll("input[type=text]");l[l.length-1].select()};
+    $("sResetAx").onclick=()=>{st.axes=clone(DEFAULT_SETTINGS.axes);drawAxes()};
+    ph.addEventListener("change",e=>{const t=e.target,i=+t.dataset.i;if(isNaN(i))return;st.phases[i][t.dataset.k]=t.dataset.k==="w"?Math.max(0,+t.value||0):t.value;drawPh()});
+    ph.addEventListener("click",e=>{const rm=e.target.closest("[data-rmp]");if(rm){st.phases.splice(+rm.dataset.rmp,1);drawPh()}});
+    $("sAddPh").onclick=()=>{st.phases.push({name:"新しい工程",w:10});drawPh()};
+    $("sSave").onclick=async()=>{
+      st.axes=st.axes.map(a=>({...a,label:a.label.trim()||"無題の項目"}));
+      st.suggest=$("sSuggest").checked;
+      st.hours={weekday:Math.max(0,+$("sWd").value||0),holiday:Math.max(0,+$("sHd").value||0)};
+      st.holidays=[...document.querySelectorAll("[data-day]:checked")].map(x=>+x.value);
+      try{await store.saveSettings(st);applySettings(st);render();closeDlg();toast("設定を保存しました")}catch(e){console.error(e);toast("保存できませんでした")}
+    };
+  });
+}
+
+/* --- 作品詳細 --- */
+function radar(w){
+  const scores=(w.review&&w.review.scores)||{}; const labels=(w.review&&w.review.labels)||{};
+  const list=axes().map(a=>[a.key,a.label]);
+  Object.keys(scores).forEach(k=>{if(!list.some(x=>x[0]===k)&&scores[k]>0)list.push([k,labels[k]||k])});
+  if(list.length<3)return`<div class="stars">${list.map(([k,l])=>`<span>${esc(l)}</span><span class="mono">${scores[k]||"-"}</span>`).join("")}</div>`;
+  const n=list.length,cx=120,cy=105,R=70;
+  const pt=(i,r)=>{const a=-Math.PI/2+i*2*Math.PI/n;return[cx+Math.cos(a)*r,cy+Math.sin(a)*r]};
+  const rings=[1,2,3,4,5].map(k=>`<polygon points="${list.map((_,i)=>pt(i,R*k/5).join(",")).join(" ")}" fill="none" stroke="var(--rule)"/>`).join("");
+  const poly=list.map(([k],i)=>pt(i,R*(scores[k]||0)/5).join(",")).join(" ");
+  const lab=list.map(([k,l],i)=>{const[x,y]=pt(i,R+18);return`<text x="${x}" y="${y+4}" text-anchor="middle">${esc(l)} ${scores[k]||"-"}</text>`}).join("");
+  return`<svg class="radar" viewBox="0 0 240 210" width="100%" style="max-width:320px" role="img" aria-label="自己評価レーダー">${rings}<polygon points="${poly}" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="2"/>${lab}</svg>`;
+}
+const starHTML=v=>{const n=Math.round(v||0);return"★".repeat(n)+`<span class="off">${"★".repeat(5-n)}</span>`};
+function scoreBlock(w){
+  const sc=(w.review&&w.review.scores)||{}, lb=(w.review&&w.review.labels)||{};
+  const rows=axes().map(a=>[a.key,a.label]); Object.keys(sc).forEach(k=>{if(!rows.some(r=>r[0]===k)&&sc[k]>0)rows.push([k,lb[k]||k])});
+  const a=avg(w);
+  return`<div class="d-score"><span class="label">自己評価</span><span class="st" aria-hidden="true">${starHTML(a)}</span><b>${a!=null?a.toFixed(1):"—"}</b></div>
+    <div class="d-rows">${rows.map(([k,l])=>`<span>${esc(l)}</span><span class="st" aria-label="${sc[k]||0}点">${sc[k]?starHTML(sc[k]):'<span class="muted">—</span>'}</span>`).join("")}</div>`;
+}
+function openDetail(w){
+  const src=store.src(w);
+  const r=w.reflection; const c=w.nextChallenge;
+  const seq=(!$("viewGallery").hidden&&galList.length)?galList:done(); const idx=seq.findIndex(x=>x.id===w.id);
+  const prevW=idx>0?seq[idx-1]:null, nextW=idx>=0&&idx<seq.length-1?seq[idx+1]:null;
+  openDlg(`<div class="dlg-head"><h3>${esc(w.title)}</h3><div class="d-nav">
+    <button class="icon" type="button" id="dPrev" aria-label="前の作品" ${prevW?"":"disabled"}>←</button><span class="mono muted" style="font-size:12px">${idx+1}/${seq.length}</span>
+    <button class="icon" type="button" id="dNext" aria-label="次の作品" ${nextW?"":"disabled"}>→</button>
+    <button class="btn ghost sm" type="button" data-close>閉じる</button></div></div>
+  <div class="dlg-body">
+    <div class="detail-top">
+      ${src?`<img src="${esc(src)}" alt="${esc(w.title)}">`:`<div class="tile" style="cursor:default"><div class="ph">${esc(w.title.slice(0,1))}</div></div>`}
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div class="mono muted">完成 ${fmtFull(w.completedAt)}${w.start?` ・ 制作期間 ${diffDays(w.start,w.completedAt)}日（予定 ${diffDays(w.start,w.due)}日）`:""}</div>
+        ${w.sample?`<span class="chip plain" style="align-self:flex-start">サンプルデータ</span>`:""}
+        ${(w.tags||[]).length?`<div style="display:flex;gap:6px;flex-wrap:wrap">${w.tags.map(t=>`<button type="button" class="tag" style="cursor:pointer" data-gotag="${esc(t)}" title="このタグで絞り込む">#${esc(t)}</button>`).join("")}</div>`:""}
+        ${scoreBlock(w)}
+        ${radar(w)}
+      </div>
+    </div>
+    ${r?`<div class="kv"><span class="label">前回の課題への反省</span><div class="prev-box"><b>${esc(r.challenge&&r.challenge.text)}</b><span>達成度 ${r.achieved?"★".repeat(r.achieved)+"☆".repeat(5-r.achieved):"未評価"}</span><p style="margin:0;white-space:pre-wrap">${esc(r.text)}</p></div></div>`:""}
+    <div class="row">
+      <div class="kv"><span class="label">良かった点</span><p>${esc(w.review&&w.review.good)||"—"}</p></div>
+      <div class="kv"><span class="label">気になった点</span><p>${esc(w.review&&w.review.bad)||"—"}</p></div>
+    </div>
+    ${c?`<div class="kv"><span class="label">この作品から決めた次の課題</span><p><span class="chip">${esc((ADVICE[c.category]||ADVICE.other).label)}</span> <b>${esc(c.text)}</b></p></div>`:""}
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" data-close>閉じる</button><button class="btn primary" type="button" id="dEdit">編集</button></div>`,
+  ()=>{$("dEdit").onclick=()=>openRecord(w);
+    if(prevW)$("dPrev").onclick=()=>openDetail(prevW); if(nextW)$("dNext").onclick=()=>openDetail(nextW);
+    dlg.onkeydown=e=>{if(e.target.matches("input,textarea,select"))return;if(e.key==="ArrowLeft"&&prevW)openDetail(prevW);if(e.key==="ArrowRight"&&nextW)openDetail(nextW)};
+    $("dlgInner").querySelectorAll("[data-gotag]").forEach(b=>b.onclick=()=>{filt={q:"",preset:"all",from:"",to:"",tags:[b.dataset.gotag],mode:"any"};saveFilt();closeDlg();syncFilterInputs();location.hash="gallery";route();renderGrid()})});
+}
+
+/* ============ 保存先とバックアップ ============ */
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}}, lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const storagePref=()=>lsGet("un-storage")||"local";
+const lastBackup=()=>lsGet("un-lastbackup");
+function openStorage(){
+  const cur=storagePref();
+  openDlg(`${head("保存先とバックアップ")}
+  <div class="dlg-body">
+    <fieldset><legend>保存先</legend>
+      <div id="drivePanel" style="display:flex;flex-direction:column;gap:12px"></div>
+    </fieldset>
+    <fieldset><legend>バックアップ</legend>
+      <p class="hint">作品画像と記録・設定を1つのZIPファイルにまとめます。中身は「上達ノート/作品」「上達ノート/記録」のフォルダで、Googleドライブ連携時と同じ形です。</p>
+      <p class="hint">最後のバックアップ：<b>${lastBackup()?fmtFull(lastBackup()):"まだありません"}</b> ・ 作品 ${done().length}点・制作中 ${wip().length}件</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="bkExport">バックアップを書き出す</button><button class="btn ghost" type="button" id="bkImport">バックアップから復元</button><input type="file" id="bkFile" accept=".zip,application/zip" hidden></div>
+      <p class="hint" id="bkMsg" aria-live="polite"></p>
+    </fieldset>
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" id="stBack">設定に戻る</button><button class="btn primary" type="button" data-close>閉じる</button></div>`,
+  ()=>{
+    if(window.drive)drive.renderPanel($("drivePanel"));
+    $("stBack").onclick=openSettings;
+    $("bkExport").onclick=exportBackup;
+    $("bkImport").onclick=()=>$("bkFile").click();
+    $("bkFile").onchange=e=>{const f=e.target.files[0];if(f)confirmImport(f);e.target.value=""};
+  });
+}
+const extOf=t=>t==="image/png"?"png":t==="image/webp"?"webp":"jpg";
+async function exportBackup(){
+  const msg=$("bkMsg"),btn=$("bkExport");
+  if(!window.JSZip){msg.textContent="ZIPを作る部品を読み込めませんでした。通信状態を確認して、開き直してください。";return}
+  btn.disabled=true;msg.textContent="作品をまとめています…";
+  try{
+    const zip=new JSZip(),root=zip.folder("上達ノート"),imgs=root.folder("作品"),recs=root.folder("記録");
+    let n=0,miss=0;const list=works.filter(w=>!w.sample);
+    for(const w of list){
+      const rec=clone(w);delete rec.imageUrl;
+      const src=store.src(w);
+      if(src){try{const r=await fetch(src);if(!r.ok)throw 0;const b=await r.blob();const name=`${w.id}.${extOf(b.type)}`;imgs.file(name,b);rec.imageFile="作品/"+name}catch(e){miss++}}
+      recs.file(`${w.id}.json`,JSON.stringify(rec,null,2));n++;msg.textContent=`作品をまとめています…（${n}/${list.length}）`;
+    }
+    root.file("設定.json",JSON.stringify(settings,null,2));
+    root.file("このファイルについて.txt",`上達ノートのバックアップ
+書き出し日: ${today()}
+作品・制作中: ${list.length}件
+
+「作品」フォルダに画像、「記録」フォルダに自己評価やスケジュールなどの記録が入っています。
+アプリの「設定 → 保存先とバックアップ → バックアップから復元」で読み込めます。
+`);
+    root.file("manifest.json",JSON.stringify({app:"joutatsu-note",format:1,exportedAt:new Date().toISOString(),count:list.length}));
+    const blob=await zip.generateAsync({type:"blob",compression:"STORE"});
+    const filename=`上達ノート_バックアップ_${today().replace(/-/g,"")}.zip`;
+    if(dlCap){await dlCap.save({filename,data:blob})}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},1500)}
+    lsSet("un-lastbackup",today());
+    msg.textContent=`${list.length}件を書き出しました（${(blob.size/1048576).toFixed(1)}MB）${miss?`。画像${miss}枚は読み込めず、記録だけ入れています`:""}`;
+  }catch(e){console.error(e);msg.textContent=e&&e.code==="declined"?"保存をキャンセルしました。":"書き出せませんでした。もう一度お試しください。"}
+  btn.disabled=false;
+}
+async function confirmImport(file){
+  if(!window.JSZip){toast("ZIPを読む部品を読み込めませんでした");return}
+  let zip,recs=[],sets=null;
+  try{zip=await JSZip.loadAsync(file);
+    const files=Object.values(zip.files).filter(f=>!f.dir);
+    for(const f of files){if(/記録\/[^/]+\.json$/.test(f.name))recs.push({f,data:JSON.parse(await f.async("string"))});
+      if(/設定\.json$/.test(f.name))sets=JSON.parse(await f.async("string"))}
+  }catch(e){console.error(e);toast("上達ノートのバックアップとして読み込めませんでした");return}
+  if(!recs.length){toast("このファイルには作品の記録が入っていません");return}
+  const same=recs.filter(r=>works.some(w=>w.id===r.data.id)).length;
+  openDlg(`${head("バックアップから復元")}
+  <div class="dlg-body">
+    <p style="margin:0">「${esc(file.name)}」から <b>${recs.length}件</b> を読み込みます。</p>
+    ${same?`<p class="note">そのうち ${same}件 は今のデータと同じ作品です。バックアップの内容で上書きします。</p>`:""}
+    <p class="hint">今あるそれ以外の作品はそのまま残ります。</p>
+    ${sets?`<label class="toggle"><input type="checkbox" id="imSet"><span>設定（自己評価の項目・作業時間・工程の配分）も復元する</span></label>`:""}
+    <p class="hint" id="imMsg" aria-live="polite"></p>
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" id="imBack">戻る</button><button class="btn primary" type="button" id="imGo">復元する</button></div>`,
+  ()=>{$("imBack").onclick=openStorage;
+    $("imGo").onclick=async()=>{const btn=$("imGo"),msg=$("imMsg");btn.disabled=true;let n=0,miss=0;
+      try{
+        for(const {data} of recs){const w=clone(data);
+          if(w.imageFile){const f=zip.file("上達ノート/"+w.imageFile)||Object.values(zip.files).find(x=>x.name.endsWith(w.imageFile));
+            if(f){try{const ext=w.imageFile.split(".").pop();const b=new Blob([await f.async("arraybuffer")],{type:ext==="png"?"image/png":ext==="webp"?"image/webp":"image/jpeg"});
+              const r=await store.upload(b);w.imageId=r.imageId;w.imageUrl=r.imageUrl}catch(e){miss++}}else miss++}
+          delete w.imageFile;await store.save(w);n++;msg.textContent=`復元しています…（${n}/${recs.length}）`}
+        if(sets&&$("imSet")&&$("imSet").checked){await store.saveSettings(sets);applySettings(sets)}
+        closeDlg();render();toast(`${n}件を復元しました${miss?`（画像${miss}枚は復元できませんでした）`:""}`);
+      }catch(e){console.error(e);msg.textContent="途中で止まりました。もう一度お試しください。";btn.disabled=false}};
+  });
+}
+
+function confirmDelete(w){
+  openDlg(`${head("削除の確認")}<div class="dlg-body"><p style="margin:0">「${esc(w.title)}」を削除します。画像と記録は元に戻せません。</p></div>
+  <div class="dlg-foot"><button class="btn" type="button" data-close>やめる</button><button class="btn danger" type="button" id="cDel">削除する</button></div>`,
+  ()=>{$("cDel").onclick=async()=>{try{await store.remove(w);closeDlg();toast("削除しました")}catch(e){toast("削除できませんでした")}}});
+}
+
+let toastT; function toast(msg,action){let t=document.querySelector(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}
+  t.textContent=msg;if(action){const b=document.createElement("button");b.type="button";b.textContent=action.label;b.onclick=()=>{t.hidden=true;action.run()};t.appendChild(b)}
+  t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,action?6000:2600)}
+
+/* 現在の工程を完了にする。実際に終えた日も記録（後で予定との差を見るため） */
+async function completePhase(w){
+  if(!w)return; const i=(w.phases||[]).findIndex(p=>!p.done); if(i<0)return;
+  const before=clone(w); const nw=clone(w); nw.phases[i].done=true; nw.phases[i].doneAt=today(); nw.updatedAt=new Date().toISOString();
+  try{await store.save(nw);
+    const next=nw.phases[i+1];
+    toast(next?`「${nw.phases[i].name}」を完了。次は「${next.name}」`:`全工程が完了しました`,{label:"元に戻す",run:async()=>{try{await store.save(before);toast("元に戻しました")}catch(e){toast("戻せませんでした")}}});
+    if(!next)setTimeout(()=>openRecord(nw),400);
+  }catch(e){console.error(e);toast("保存できませんでした")}
+}
+
+/* ============ イベント ============ */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-close],[data-open],[data-edit],[data-finish],[data-act],[data-step]");if(!t)return;
+  if(t.hasAttribute("data-close"))return closeDlg();
+  if(!store){toast("読み込み中です");return}
+  const find=id=>works.find(w=>w.id===id);
+  if(t.dataset.step)return completePhase(find(t.dataset.step));
+  if(t.dataset.open)openDetail(find(t.dataset.open));
+  else if(t.dataset.edit)openPlan(find(t.dataset.edit));
+  else if(t.dataset.finish)openRecord(find(t.dataset.finish));
+  else if(t.dataset.act==="add")openRecord();
+  else if(t.dataset.act==="plan")openPlan();
+});
+$("btnAdd").onclick=()=>store?openRecord():toast("読み込み中です");
+$("btnPlan").onclick=()=>store?openPlan():toast("読み込み中です");
+$("btnTheme").onclick=()=>setTheme(isDark()?"light":"dark");
+applyTheme();
+$("btnSet").onclick=()=>store?openSettings():toast("読み込み中です");
+$("sort").onchange=e=>{sortMode=e.target.value;try{localStorage.setItem("un-sort",sortMode)}catch(_){}renderGrid()};
+function clearFilter(){filt={q:"",preset:"all",from:"",to:"",tags:[],mode:filt.mode};saveFilt();syncFilterInputs();renderGrid()}
+$("fq").addEventListener("input",e=>{filt.q=e.target.value;saveFilt();renderGrid()});
+$("fPreset").onchange=e=>{filt.preset=e.target.value;const r=presetRange(filt.preset);if(r){[filt.from,filt.to]=r}else if(filt.preset==="all"){filt.from=filt.to=""}
+  saveFilt();syncFilterInputs();renderGrid();if(filt.preset==="custom")$("fFrom").focus()};
+["fFrom","fTo"].forEach(id=>$(id).onchange=()=>{filt.from=$("fFrom").value;filt.to=$("fTo").value;filt.preset=(filt.from||filt.to)?"custom":"all";saveFilt();syncFilterInputs();renderGrid()});
+$("fMode").onchange=e=>{filt.mode=e.target.value;saveFilt();renderGrid()};
+$("fTags").onclick=e=>{const b=e.target.closest("[data-tag]");if(!b)return;const t=b.dataset.tag;filt.tags=filt.tags.includes(t)?filt.tags.filter(x=>x!==t):[...filt.tags,t];saveFilt();renderGrid()};
+$("fChips").onclick=e=>{const b=e.target.closest("[data-unf]");if(!b)return;const k=b.dataset.unf;
+  if(k==="all")return clearFilter();
+  if(k==="q"){filt.q="";$("fq").value=""}else if(k==="date"){filt.from=filt.to="";filt.preset="all"}else if(k.startsWith("tag:")){filt.tags=filt.tags.filter(t=>t!==k.slice(4))}
+  saveFilt();syncFilterInputs();renderGrid()};
+const openSearch=open=>{$("fq").hidden=!open;$("btnSearch").setAttribute("aria-expanded",open);if(open)$("fq").focus()};
+$("btnSearch").onclick=()=>{const open=$("fq").hidden;if(!open&&filt.q){$("fq").focus();return}openSearch(open)};
+$("fq").addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();filt.q="";$("fq").value="";saveFilt();renderGrid();openSearch(false);$("btnSearch").focus()}});
+$("fq").addEventListener("blur",()=>{if(!filt.q)openSearch(false)});
+if(filt.q)openSearch(true),$("fq").blur();
+$("btnFilter").onclick=()=>{const f=$("filters");f.hidden=!f.hidden;$("btnFilter").setAttribute("aria-expanded",!f.hidden)};
+const applySize=()=>{$("btnSize").setAttribute("aria-pressed",galBig);$("btnSize").setAttribute("aria-label",galBig?"作品を小さく表示":"作品を大きく表示")};
+$("btnSize").onclick=()=>{galBig=!galBig;try{localStorage.setItem("un-big",galBig?"1":"0")}catch(e){}applySize();layoutGrid()};
+applySize();
+let lastCols=0;new ResizeObserver(()=>{const g=$("grid");if(!galList.length||!g.clientWidth)return;const min=galBig?340:190;const c=Math.max(2,Math.min(6,Math.floor((g.clientWidth+6)/(min+6))));if(c!==+g.dataset.cols)layoutGrid()}).observe($("grid"));
+// 相対期間（今月など）は開くたびに今日を基準に計算し直す
+{const r=presetRange(filt.preset);if(r)[filt.from,filt.to]=r}
+syncFilterInputs();
+/* 表示の切り替え：#gallery でギャラリーを直接開ける */
+function route(){const g=location.hash==="#gallery";$("viewHome").hidden=g;$("viewGallery").hidden=!g;$("status").hidden=g;
+  $("tabHome").toggleAttribute("aria-current",!g);$("tabGallery").toggleAttribute("aria-current",g);
+  if(g)$("tabGallery").setAttribute("aria-current","page");else $("tabHome").setAttribute("aria-current","page")}
+window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0);if(location.hash==="#gallery")layoutGrid()});
+route();
+
+/* ============ 起動 ============ */
+render();
+(async()=>{
+  let db=null,assets=null;
+  if(window.claude&&window.claude.use){
+    [db,assets,sampleFn,dlCap]=await Promise.all(["db","assets","sample","downloads"].map(n=>window.claude.use(n).catch(()=>null)));
+  }
+  const attachLocal=async(note)=>{try{store=await localStore();store.watchSettings(v=>{applySettings(v);render()});$("status").innerHTML=`保存先: <b>この端末</b>${note?" ・ "+note:""}<span id="syncStat"></span>`;store.subscribe(l=>{works=l;render()});if(window.driveBoot)window.driveBoot()}
+    catch(e){$("status").textContent="保存領域を開けませんでした。プライベートウィンドウでは保存できません。"}};
+  if(db){
+    store=cloudStore(db,assets);
+    store.watchSettings(v=>{applySettings(v);render()});
+    const timer=setTimeout(()=>{$("status").textContent="データの読み込みに時間がかかっています…"},10000);
+    store.subscribe(list=>{clearTimeout(timer);works=list;$("status").innerHTML=`保存先: <b>クラウド</b>（どの端末から開いても同じ記録） ・ 作品 ${done().length}点 ・ 制作中 ${wip().length}件`;render()},
+      err=>{clearTimeout(timer);$("status").textContent="データを読み込めませんでした（"+(err&&err.code||"error")+"）"});
+    if(!assets){$("status").textContent+=" ・ 画像アップロードは編集権限のある人のみ"}
+  } else {
+    await attachLocal("");
+  }
+  render();
+})();
+</script>
+<script>
+/* オフラインでも開けるように（PWA） */
+if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
