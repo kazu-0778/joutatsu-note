@@ -136,6 +136,17 @@ dialog{overscroll-behavior:contain}
 .opt .chip{margin-left:6px}
 .steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .note{font-size:13px;border-left:3px solid var(--rule);padding:4px 10px;color:var(--ink-2)}
+.gacha{border:1px solid var(--rule);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--paper)}
+.gacha-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.gacha-slots{grid-template-columns:minmax(0,1fr)}}
+.gslot{border:1.5px solid var(--rule);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;background:var(--sheet);min-width:0}
+.gslot b{font-size:18px;line-height:1.4;overflow-wrap:anywhere}
+.gslot.locked{border-color:var(--accent)}
+.gbtns{display:flex;gap:2px;flex-wrap:wrap;margin-left:-8px}
+.gbtns [aria-pressed="true"]{color:var(--accent)}
+.gextra{display:flex;flex-direction:column;gap:6px}
+.gactions{display:flex;gap:8px;flex-wrap:wrap}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .suggest-box{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
 .suggest-box .vals{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
 .suggest-box .vals b{font-family:var(--f-mono);font-weight:500}
@@ -360,11 +371,12 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.03-5";
+const APP_VERSION="2026.11.03-6";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
   suggest:true,
+  useClaude:false,
   hours:{weekday:2,holiday:5},
   holidays:[0,6],
   phases:[{name:"ラフ",w:20},{name:"線画",w:30},{name:"着色",w:35},{name:"仕上げ",w:15}]
@@ -593,7 +605,7 @@ function renderSched(){
     let state; if(!cur) state=`<span class="chip ok">全工程完了</span>`;
     else{const d=diffDays(t,cur.due); state= d<0?`<span class="chip warn">${esc(cur.name)} ${-d}日遅れ</span>`: `<span class="chip">${esc(cur.name)} あと${d}日</span>`;}
     return`<div class="sched-item">
-      <div class="sched-head"><b>${esc(w.title)}</b>${state}</div>
+      <div class="sched-head"><b>${esc(w.title)}</b>${state}</div>${w.theme&&w.theme.text?`<span class="hint">テーマ：${esc(w.theme.text)}</span>`:""}
       <div class="bar">${segs}${pos>=0&&pos<=100?`<div class="today" style="left:${pos}%"></div>`:""}</div>
       <div class="sched-meta"><span class="mono">${fmtFull(w.start)} → ${fmtFull(w.due)}</span><span>締切まで ${left>=0?left+"日":"<b style='color:var(--warn)'>"+(-left)+"日超過</b>"}</span>${cur&&left>=0?`<span>残り作業可能 <span class="mono">${remainHours(w)}</span>h</span>`:""}
       <span class="sched-actions"><button class="btn sm ghost" type="button" data-edit="${w.id}">編集</button>${cur?`<button class="btn sm ${cur===w.phases[w.phases.length-1]?"":"primary"}" type="button" data-step="${w.id}">「${esc(cur.name)}」を完了</button>`:""}<button class="btn sm ${cur?"":"primary"}" type="button" data-finish="${w.id}">完成として記録</button></span></div>
@@ -742,7 +754,7 @@ function requestClose(){
 }
 const markDirty=e=>{if(e.target.closest&&e.target.closest(".discard"))return;dlgDirty=true};
 $("dlgInner").addEventListener("input",markDirty);$("dlgInner").addEventListener("change",markDirty);
-$("dlgInner").addEventListener("click",e=>{if(e.target.closest(".scale button,[data-rmt],.sugg button,[data-rm],[data-rmx],[data-rmp],#pAddPh,#pReset,#sAddAx,#sAddPh,#sResetAx,#pUseSg"))dlgDirty=true});
+$("dlgInner").addEventListener("click",e=>{if(e.target.closest(".scale button,[data-rmt],.sugg button,[data-rm],[data-rmx],[data-rmp],#pAddPh,#pReset,#sAddAx,#sAddPh,#sResetAx,#pUseSg,.gacha button,#gachaBtn"))dlgDirty=true});
 $("dlgInner").addEventListener("drop",()=>{dlgDirty=true});
 dlg.addEventListener("click",e=>{if(e.target===dlg)requestClose()});
 dlg.addEventListener("cancel",e=>{if(dlgGuard&&dlgDirty){e.preventDefault();requestClose()}});
@@ -900,6 +912,85 @@ function suggestShares(phases){
   return{n:src.length,vals,late:phases.map(p=>stat[p.name]&&stat[p.name].l.length?mean(stat[p.name].l):null)};
 }
 
+
+/* ============ お題ガチャ ============
+   3つの枠（だれ・何／どこ・状況／雰囲気）から1語ずつ。どこ・状況と雰囲気には季節・色・テーマの言葉も混ぜ、
+   今の季節の語は出やすくする。4つ目に「練習ポイント」（いまの課題から）、作業時間から「描く範囲」を添える。 */
+const GACHA={
+  who:["魔女","騎士","探偵","料理人","郵便配達員","天使","悪魔","吸血鬼","人魚","竜","狐の神様","黒猫","ロボット","アンドロイド","宇宙飛行士","図書館の司書","花屋","パン屋","バンドのギタリスト","生徒会長","双子","幼なじみ","王子","お姫様","海賊","忍者","侍","巫女","魔法少女","錬金術師","旅人","冒険者","喫茶店のマスター","絵描き","写真家","時計職人","庭師","シスター","占い師","怪盗","執事","メイド","魔王","勇者","妖精","鬼","天狗","幽霊","科学者","医者","消防士","車掌","気象予報士","書道家","和菓子職人","狼","うさぎ","ペンギン","くま","金魚","白い鳥","雪だるま","人形","ドラゴンの子ども","剣士","弓使い","吟遊詩人","商人","船乗り","ダンサー"],
+  where:["雨上がりの駅","夜の図書館","学校の屋上","放課後の教室","古本屋","海辺の灯台","森の奥の小屋","廃墟の遊園地","路地裏","深夜のコンビニ","星空の丘","水族館","美術館","喫茶店の窓際","夕焼けの帰り道","満員電車","宇宙ステーション","砂漠のオアシス","空に浮かぶ島","地下鉄のホーム","雨の交差点","誕生日の朝","引っ越しの日","試験前夜","待ち合わせ","寝坊した朝","料理の途中","昼寝","雨宿り","旅立ちの日","別れの駅","告白の直前","勝利の瞬間","戦いの後","秘密基地","屋台","温泉","神社の境内","城の大広間","市場","港町","花畑","温室","時計塔の中","夜行列車","ゲームセンター","洗濯物を干す","猫に囲まれる","手紙を書く","傘を差し出す","空を見上げる","振り返る瞬間","寝起き","魔法の練習","ケーキを作る","電話をしている"],
+  mood:["レトロ","ノスタルジック","幻想的","ポップ","クール","ゆるい","切ない","不穏","神秘的","爽やか","ほっこり","ダーク","きらきら","静けさ","疾走感","和風","中華風","スチームパンク","サイバーパンク","童話風","青","赤","白と黒","モノクロ","パステルカラー","くすみカラー","金色","緑","紫","ネオン","セピア","補色","朝焼け","月明かり","雨音","約束","秘密","再会","旅立ち","憧れ","嘘","祈り","願い","記憶","孤独","友情","勇気","初恋","後悔","希望","日常","非日常","自由","夢"],
+  season:{
+    spring:{where:["桜並木","入学式","お花見","春一番の丘","菜の花畑"],mood:["桜色","新生活","春の陽だまり","若葉色"]},
+    summer:{where:["夏祭り","花火大会","海水浴","ひまわり畑","風鈴の縁側","夕立"],mood:["夏の青","蝉時雨","入道雲","ラムネ色"]},
+    autumn:{where:["紅葉の山道","ハロウィン","お月見","落ち葉の公園","読書の秋"],mood:["茜色","金木犀","実りの秋","秋の夜長"]},
+    winter:{where:["クリスマスの夜","初詣","雪合戦","こたつ","大晦日","雪の降る街"],mood:["白銀","雪明かり","ぬくもり","冬の星座"]}
+  },
+  points:{anatomy:["全身を入れる","ひねりのあるポーズで"],face:["表情をはっきりと","斜め45度の顔で"],hands:["手を見せる","物を持たせる"],pose:["動きのあるポーズで","ジャンプの瞬間で"],
+    composition:["俯瞰の構図で","あおりの構図で","三分割構図で","対角線の構図で"],perspective:["背景をしっかり（二点透視）","アイレベルを決めて背景を入れる"],lineart:["線の強弱を意識して"],
+    color:["3色だけで配色","補色を差し色に"],light:["逆光で","強い光源をひとつ決めて"],painting:["質感を描き分ける（布と金属）"],clothes:["服のシワを多めに","重ね着で"],speed:["時間内に必ず完成","仕上げは3か所まで"],other:["今の課題を意識して"]}
+};
+const seasonKey=()=>{const m=new Date().getMonth()+1;return m>=3&&m<=5?"spring":m<=8&&m>=6?"summer":m>=9&&m<=11?"autumn":"winter"};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function drawWord(slot,not){
+  const ss=GACHA.season[seasonKey()];let pool=GACHA[slot];
+  if(slot!=="who"&&Math.random()<0.3)pool=ss[slot]; // 今の季節の語は出やすく
+  let w=pick(pool),n=0;while(w===not&&n++<5)w=pick(pool);return w;
+}
+function drawScale(H){return H<6?"バストアップ・1人":H<=15?"腰上〜全身・1人、簡単な背景":"全身・背景あり（2人まで）"}
+function drawPoint(){const c=latestChallenge();if(!c)return"";const cat=ADVICE[c.nextChallenge.category]?c.nextChallenge.category:"other";return pick(GACHA.points[cat]||GACHA.points.other)}
+function claudePrompt(g,ctx){
+  const recent=done().slice(0,5).map(w=>`・${w.title}${(w.tags||[]).length?`（${w.tags.map(t=>"#"+t).join(" ")}）`:""}`).join("\n");
+  const c=latestChallenge();
+  return `イラストの次の作品のテーマを一緒に決めたいです。お題ガチャで次の言葉が出ました。
+
+だれ・何：${g.who}
+どこ・状況：${g.where}
+雰囲気：${g.mood}
+${g.point?`練習ポイント：${g.point}\n`:""}描く範囲の目安：${g.scale}
+今の課題：${c?c.nextChallenge.text:"（なし）"}
+制作期間：${ctx.start}〜${ctx.due}（作業できる時間は合計 約${Math.round(ctx.H)}時間）
+最近描いた作品：
+${recent||"（まだありません）"}
+
+進め方：
+1. まず、今描きたい気分や好きなものについて、短い質問を2〜3個してください。
+2. 答えをふまえて、テーマ案を3つ出してください。各案に「タイトル」「どんな場面か」「構図のアイデア」「見せ場」を付けてください。お題の言葉は全部使わなくても、ふくらませてもかまいません。
+3. 最近の作品と題材がかぶりすぎないようにしてください。
+4. 決まったら、上達ノートのテーマ欄に貼れるように、最後にテーマを1行でまとめてください。`;
+}
+function setupGacha(w,getCtx){
+  const g=Object.assign({who:"",where:"",mood:"",point:"",scale:"",lock:{},usePoint:true},w.theme&&w.theme.gacha||{});g.lock={};
+  let used=!!(w.theme&&w.theme.source==="gacha");
+  const panel=$("gacha");
+  const slots=[["who","だれ・何"],["where","どこ・状況"],["mood","雰囲気"]];
+  const roll=(all)=>{slots.forEach(([k])=>{if(all?!g.lock[k]:true)g[k]=drawWord(k,g[k])});g.point=drawPoint();g.scale=drawScale(getCtx().H)};
+  const draw=()=>{
+    const ctx=getCtx();g.scale=drawScale(ctx.H);
+    panel.innerHTML=`<div class="gacha-slots">${slots.map(([k,l])=>`<div class="gslot ${g.lock[k]?"locked":""}"><span class="label">${l}</span><b>${esc(g[k])}</b>
+        <span class="gbtns"><button type="button" class="btn sm ghost" data-glock="${k}" aria-pressed="${!!g.lock[k]}">${g.lock[k]?"固定中":"固定"}</button><button type="button" class="btn sm ghost" data-groll="${k}" ${g.lock[k]?"disabled":""}>引き直す</button></span></div>`).join("")}</div>
+      <div class="gextra">
+        ${g.point?`<label class="toggle"><input type="checkbox" id="gPoint" ${g.usePoint?"checked":""}><span>練習ポイント：<b>${esc(g.point)}</b><br><span class="hint">いまの課題「${esc(latestChallenge().nextChallenge.text)}」から</span></span></label>`:`<p class="hint">いまの課題を決めると、ここに練習ポイントが付きます。</p>`}
+        <p class="hint">描く範囲の目安：<b>${esc(g.scale)}</b>（作業できる時間 約${Math.round(ctx.H)}時間）</p>
+      </div>
+      <div class="gactions"><button type="button" class="btn sm" id="gAll">ぜんぶ引き直す</button><button type="button" class="btn sm primary" id="gUse">このお題で描く</button>
+        ${settings.useClaude?`<a class="btn sm" id="gClaude" target="_blank" rel="noopener">Claudeで相談する ↗</a><button type="button" class="btn sm ghost" id="gCopy">相談文をコピー</button>`:""}</div>
+      ${settings.useClaude?`<p class="hint">claude.ai が開き、お題と今の課題・最近の作品を伝えた状態で相談を始められます。決まったテーマを上の「テーマ」欄に貼ってください。</p>`:""}`;
+    panel.querySelectorAll("[data-glock]").forEach(b=>b.onclick=()=>{const k=b.dataset.glock;g.lock[k]=!g.lock[k];draw()});
+    panel.querySelectorAll("[data-groll]").forEach(b=>b.onclick=()=>{const k=b.dataset.groll;g[k]=drawWord(k,g[k]);draw()});
+    const gp=$("gPoint");if(gp)gp.onchange=()=>{g.usePoint=gp.checked};
+    $("gAll").onclick=()=>{roll(true);draw()};
+    $("gUse").onclick=()=>{const t=`${g.who} × ${g.where} × ${g.mood}${g.point&&g.usePoint?`（練習：${g.point}）`:""}`;$("pTheme").value=t;used=true;
+      if(!$("pTitle").value.trim())$("pTitle").value=`${g.where}の${g.who}`;dlgDirty=true;toast("テーマに入れました")};
+    const prompt=()=>claudePrompt(Object.assign({},g,{point:g.usePoint?g.point:""}),getCtx());
+    const gc=$("gClaude");if(gc){gc.href="https://claude.ai/new?q="+encodeURIComponent(prompt());gc.onmouseenter=gc.onfocus=()=>{gc.href="https://claude.ai/new?q="+encodeURIComponent(prompt())};gc.onclick=()=>{used=true}}
+    const cp=$("gCopy");if(cp)cp.onclick=()=>{const t=prompt();navigator.clipboard.writeText(t).then(()=>toast("相談文をコピーしました。Claudeに貼り付けてください")).catch(()=>{const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("相談文をコピーしました")}catch(e){toast("コピーできませんでした")}ta.remove()})};
+  };
+  $("gachaBtn").onclick=()=>{if(panel.hidden){if(!g.who)roll(false);panel.hidden=false;draw();$("gachaBtn").textContent="お題ガチャを閉じる"}else{panel.hidden=true;$("gachaBtn").textContent="お題ガチャを引く"}};
+  return{collect(){const text=$("pTheme").value.trim();if(!text)return null;
+    return{text,source:used?"gacha":"manual",gacha:used?{who:g.who,where:g.where,mood:g.mood,point:g.usePoint?g.point:"",scale:g.scale}:undefined}}};
+}
+
 /* --- 制作の計画（スケジュール） --- */
 function openPlan(existing){
   const w=existing?clone(existing):{id:uid(),title:"",status:"wip",createdAt:today(),start:today(),due:addDays(today(),14),
@@ -945,6 +1036,11 @@ function openPlan(existing){
       </div>
       ${(()=>{const c=latestChallenge();return c?`<div class="prev-box"><span class="label">この作品で取り組む課題</span><b>${esc(c.nextChallenge.text)}</b></div>`:""})()}
     </fieldset>
+    <fieldset><legend>テーマ</legend>
+      <div class="f"><label for="pTheme">何を描くか（任意）</label><input type="text" id="pTheme" value="${esc(w.theme&&w.theme.text)}" placeholder="例：雨上がりの駅にいる魔女（レトロ）"></div>
+      <div><button class="btn sm" type="button" id="gachaBtn">お題ガチャを引く</button> <span class="hint">描きたいものが決まらないときに</span></div>
+      <div id="gacha" class="gacha" hidden></div>
+    </fieldset>
     <fieldset><legend>工程と期日</legend>
       <p class="hint" id="pSum"></p>
       <div id="pSuggest"></div>
@@ -956,6 +1052,7 @@ function openPlan(existing){
   <div class="dlg-foot">${existing?`<button class="btn danger" type="button" id="btnDel" style="margin-right:auto">削除</button>`:""}<button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="pSave">保存</button></div>`,
   ()=>{
     recompute();
+    const gacha=setupGacha(w,()=>({H:info?info.H:0,start:w.start,due:w.due}));
     ["pStart","pDue","pWd","pHd"].forEach(id=>$(id).addEventListener("change",recompute));
     const tbl=$("pTable");
     tbl.addEventListener("change",e=>{const t=e.target,i=+t.dataset.i,k=t.dataset.k;if(isNaN(i))return;
@@ -969,7 +1066,8 @@ function openPlan(existing){
     $("pSave").onclick=async()=>{
       const title=$("pTitle").value.trim();if(!title){$("pTitle").focus();toast("タイトルを入れてください");return}
       if(!w.start||!w.due||diffDays(w.start,w.due)<0){toast("締切は開始日より後にしてください");return}
-      w.title=title;w.phases=phases;w.updatedAt=new Date().toISOString();
+      w.title=title;w.phases=phases;w.theme=gacha.collect();
+      if(w.theme&&w.theme.source==="gacha"){w.tags=[...new Set([...(w.tags||[]),"お題ガチャ"])]}w.updatedAt=new Date().toISOString();
       try{await store.save(w);closeDlg();toast("スケジュールを保存しました")}catch(e){console.error(e);toast("保存できませんでした")}
     };
   });
@@ -1006,6 +1104,9 @@ function openSettings(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><p class="hint" id="sHint"></p><button class="btn sm" type="button" id="sSort">並び替え</button></div>
       <div class="set-list" id="sAxes"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="sAddAx">＋ 項目を追加</button><button class="btn sm ghost" type="button" id="sResetAx">初期の6項目に戻す</button></div>
+    </fieldset>
+    <fieldset><legend>Claude連携</legend>
+      <label class="toggle"><input type="checkbox" id="sClaude" ${st.useClaude?"checked":""}><span>Claudeを使っている<br><span class="hint">オンにすると、お題ガチャから claude.ai に移ってテーマを相談できます（Claudeのアカウントが必要です）。</span></span></label>
     </fieldset>
     <fieldset><legend>課題決めの補助</legend>
       <label class="toggle"><input type="checkbox" id="sSuggest" ${st.suggest?"checked":""}><span>自己評価の低い項目から課題の候補を出す<br><span class="hint">オフにすると、課題は自分で書くだけになります。</span></span></label>
@@ -1053,7 +1154,7 @@ function openSettings(){
     $("sAddPh").onclick=()=>{st.phases.push({name:"新しい工程",w:10});drawPh()};
     $("sSave").onclick=async()=>{
       st.axes=st.axes.map(a=>({...a,label:a.label.trim()||"無題の項目"}));
-      st.suggest=$("sSuggest").checked;
+      st.suggest=$("sSuggest").checked;st.useClaude=$("sClaude").checked;
       st.hours={weekday:Math.max(0,+$("sWd").value||0),holiday:Math.max(0,+$("sHd").value||0)};
       st.holidays=[...document.querySelectorAll("[data-day]:checked")].map(x=>+x.value);
       try{await store.saveSettings(st);applySettings(st);render();closeDlg();toast("設定を保存しました")}catch(e){console.error(e);toast("保存できませんでした")}
@@ -1107,6 +1208,7 @@ function openDetail(w){
       <div class="kv"><span class="label">良かった点</span><p>${esc(w.review&&w.review.good)||"—"}</p></div>
       <div class="kv"><span class="label">気になった点</span><p>${esc(w.review&&w.review.bad)||"—"}</p></div>
     </div>
+    ${w.theme&&w.theme.text?`<div class="kv"><span class="label">テーマ</span><p>${esc(w.theme.text)}</p></div>`:""}
     ${c?`<div class="kv"><span class="label">この作品から決めた次の課題</span><p><span class="chip">${esc((ADVICE[c.category]||ADVICE.other).label)}</span> <b>${esc(c.text)}</b></p></div>`:""}
   </div>
   <div class="dlg-foot"><button class="btn" type="button" data-close>閉じる</button><button class="btn primary" type="button" id="dEdit">編集</button></div>`,
