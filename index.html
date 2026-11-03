@@ -43,6 +43,7 @@
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
 img{max-width:100%}
+html{background:var(--paper)}
 [hidden]{display:none!important}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
@@ -244,10 +245,12 @@ textarea{min-height:76px;resize:vertical}
 .fchip button:hover{background:var(--sheet)}
 .linkbtn{border:none;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;font-size:12px;padding:2px 4px}
 /* masonry */
-.masonry{display:flex;gap:6px;align-items:flex-start}
-.mcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
-.masonry .tile{border-radius:4px;box-shadow:none;background:var(--rule)}
-.masonry .tile img{display:block;width:100%;height:auto;max-width:100%}
+/* ギャラリー：同じ大きさの正方形タイル（画像は中央を切り取って表示。全体は詳細画面で見る） */
+.masonry{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tile,180px),1fr));gap:6px}
+.masonry.big{--tile:320px}
+@media (max-width:480px){.masonry{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.masonry.big{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.masonry .tile{border-radius:4px;box-shadow:none;background:var(--rule);aspect-ratio:1/1;overflow:hidden}
+.masonry .tile img{display:block;width:100%;height:100%;max-width:100%;object-fit:cover}
 .masonry .tile:hover img{filter:brightness(1.06)}
 .masonry .tile:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .masonry .ph{aspect-ratio:1/1}
@@ -357,7 +360,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.03-4";
+const APP_VERSION="2026.11.03-5";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -602,21 +605,13 @@ function remainHours(w){const h=w.hours||settings.hours;let t=0;for(let d=today(
 function tileHTML(w){
   const src=store?store.src(w):""; const ar=w.ar||arCache[w.id];
   return`<button class="tile" type="button" data-open="${w.id}" aria-label="${esc(w.title)}（${fmtFull(w.completedAt)}）">
-    ${src?`<img src="${esc(src)}" alt="" loading="lazy" data-ar="${w.id}" ${ar?`style="aspect-ratio:1/${ar}"`:""}>`:`<div class="ph">${esc((w.title||"?").slice(0,1))}</div>`}
+    ${src?`<img src="${esc(src)}" alt="" loading="lazy">`:`<div class="ph">${esc((w.title||"?").slice(0,1))}</div>`}
     ${w.sample?`<span class="chip plain badge" style="background:var(--sheet)">サンプル</span>`:""}</button>`;
 }
-/* 石畳（Masonry）レイアウト：元の縦横比のまま、いちばん短い列に順に積む。左上から新しい順に読める。 */
 function layoutGrid(){
-  const g=$("grid"); if(!g)return;
-  if(!galList.length){return}
-  const width=g.clientWidth||window.innerWidth; const min=galBig?340:190;
-  const cols=Math.max(2,Math.min(6,Math.floor((width+6)/(min+6))));
-  const h=Array(cols).fill(0), b=[...Array(cols)].map(()=>[]);
-  galList.forEach(w=>{const i=h.indexOf(Math.min(...h));b[i].push(w);h[i]+=(store&&store.src(w)?(w.ar||arCache[w.id]||1):1)+0.03});
-  g.innerHTML=b.map(c=>`<div class="mcol">${c.map(tileHTML).join("")}</div>`).join("");
-  g.dataset.cols=cols;
-  g.querySelectorAll("img[data-ar]").forEach(img=>{const id=img.dataset.ar;const w=works.find(x=>x.id===id);if(w&&(w.ar||arCache[id]))return;
-    const set=()=>{if(img.naturalWidth){arCache[id]=img.naturalHeight/img.naturalWidth;relayoutSoon()}};img.complete?set():img.addEventListener("load",set,{once:true})});
+  const g=$("grid"); if(!g||!galList.length)return;
+  g.classList.toggle("big",galBig);
+  g.innerHTML=galList.map(tileHTML).join("");
 }
 let relayT; const relayoutSoon=()=>{clearTimeout(relayT);relayT=setTimeout(layoutGrid,120)};
 function presetRange(p){const t=new Date(),y=t.getFullYear(),m=t.getMonth();
@@ -795,8 +790,11 @@ function openRecord(existing){
 
     ${prevCh?`<fieldset><legend><span class="n">2</span>前回の課題の反省</legend>
       <div class="prev-box"><span class="label">前回の課題（${esc((ADVICE[prevCh.category]||ADVICE.other).label)}）</span><b>${esc(prevCh.text)}</b></div>
-      <div class="stars"><span>達成度</span>${scaleHTML("achieved",refl.achieved)}</div>
-      <div class="f"><label for="rRefl">できたこと・できなかったこと</label><textarea id="rRefl" placeholder="例：手を隠さずに描けたが、指の長さがバラバラになった">${esc(w.reflection&&w.reflection.text)}</textarea></div>
+      <label class="toggle"><input type="checkbox" id="rSkip" ${w.reflection&&w.reflection.skipped?"checked":""}><span>この作品では反省をスキップする<br><span class="hint" id="rSkipHint">過去の作品を登録するときなど。前回の課題は次の作品に持ち越されます。</span></span></label>
+      <div id="reflBody" style="display:flex;flex-direction:column;gap:12px">
+        <div class="stars"><span>達成度</span>${scaleHTML("achieved",refl.achieved)}</div>
+        <div class="f"><label for="rRefl">できたこと・できなかったこと</label><textarea id="rRefl" placeholder="例：手を隠さずに描けたが、指の長さがバラバラになった">${esc(w.reflection&&w.reflection.text)}</textarea></div>
+      </div>
     </fieldset>`:""}
 
     <fieldset><legend><span class="n">${prevCh?3:2}</span>自己評価</legend>
@@ -820,6 +818,16 @@ function openRecord(existing){
     root.querySelectorAll("[data-scale]").forEach(s=>s.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const k=s.dataset.scale,v=+b.dataset.v;
       const tgt=k==="achieved"?refl:scores; tgt[k]=tgt[k]===v?0:v; s.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.v===tgt[k]));if(k!=="achieved")drawSugg()}));
     $("rCat").onchange=e=>{$("advPrev").innerHTML=practicesHTML(e.target.value)};
+    // 反省のスキップ：完成日が「前回の課題を決めた作品」より前なら、過去作の登録とみなして自動でスキップ
+    if($("rSkip")){
+      const prevDate=prev&&prev.completedAt;
+      const syncSkip=()=>{$("reflBody").hidden=$("rSkip").checked};
+      const autoSkip=()=>{if(editingDone||!prevDate)return;const old=($("rDate").value||today())<prevDate;
+        if(old){$("rSkip").checked=true;$("rSkipHint").textContent=`完成日が前回の課題を決めた「${prev.title}」（${fmtFull(prevDate)}）より前なので、過去の作品としてスキップしています。`}
+        else{$("rSkipHint").textContent="過去の作品を登録するときなど。前回の課題は次の作品に持ち越されます。"}
+        syncSkip()};
+      $("rSkip").onchange=syncSkip;$("rDate").addEventListener("change",autoSkip);syncSkip();
+    }
     const tags=[...(w.tags||[])]; const tagIn=$("rTag"),tagBox=$("tagBox");
     const drawTags=()=>{tagBox.querySelectorAll(".tag").forEach(x=>x.remove());
       tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tag";sp.innerHTML=`#${esc(t)}<button type="button" aria-label="${esc(t)}を外す" data-rmt="${i}">×</button>`;tagBox.insertBefore(sp,tagIn)})};
@@ -851,7 +859,8 @@ function openRecord(existing){
         w.title=title;w.status="done";w.completedAt=$("rDate").value||today();
         const used=new Set(axes().map(a=>a.key));Object.keys(scores).forEach(k=>{if(!used.has(k)&&!(w.review&&w.review.labels&&w.review.labels[k]))delete scores[k]});
         w.review={scores,labels:{...((w.review&&w.review.labels)||{}),...Object.fromEntries(axes().map(a=>[a.key,a.label]))},good:$("rGood").value,bad:$("rBad").value};
-        if(prevCh) w.reflection={fromId:editingDone?(w.reflection&&w.reflection.fromId):prev.id,challenge:prevCh,achieved:refl.achieved,text:$("rRefl").value};
+        if(prevCh){const fromId=editingDone?(w.reflection&&w.reflection.fromId):prev.id;
+          w.reflection=$("rSkip").checked?{fromId,challenge:prevCh,skipped:true}:{fromId,challenge:prevCh,achieved:refl.achieved,text:$("rRefl").value}}
         const nt=$("rNext").value.trim(); w.nextChallenge=nt?{category:$("rCat").value,text:nt}:null;
         w.updatedAt=new Date().toISOString(); delete w.sample;
         await store.save(w); closeDlg(); toast("保存しました");
@@ -1093,7 +1102,7 @@ function openDetail(w){
         ${radar(w)}
       </div>
     </div>
-    ${r?`<div class="kv"><span class="label">前回の課題への反省</span><div class="prev-box"><b>${esc(r.challenge&&r.challenge.text)}</b><span>達成度 ${r.achieved?"★".repeat(r.achieved)+"☆".repeat(5-r.achieved):"未評価"}</span><p style="margin:0;white-space:pre-wrap">${esc(r.text)}</p></div></div>`:""}
+    ${r&&!r.skipped?`<div class="kv"><span class="label">前回の課題への反省</span><div class="prev-box"><b>${esc(r.challenge&&r.challenge.text)}</b><span>達成度 ${r.achieved?"★".repeat(r.achieved)+"☆".repeat(5-r.achieved):"未評価"}</span><p style="margin:0;white-space:pre-wrap">${esc(r.text)}</p></div></div>`:""}
     <div class="row">
       <div class="kv"><span class="label">良かった点</span><p>${esc(w.review&&w.review.good)||"—"}</p></div>
       <div class="kv"><span class="label">気になった点</span><p>${esc(w.review&&w.review.bad)||"—"}</p></div>
@@ -1259,7 +1268,6 @@ $("btnFilter").onclick=()=>{const f=$("filters");f.hidden=!f.hidden;$("btnFilter
 const applySize=()=>{$("btnSize").setAttribute("aria-pressed",galBig);$("btnSize").setAttribute("aria-label",galBig?"作品を小さく表示":"作品を大きく表示")};
 $("btnSize").onclick=()=>{galBig=!galBig;try{localStorage.setItem("un-big",galBig?"1":"0")}catch(e){}applySize();layoutGrid()};
 applySize();
-let lastCols=0;new ResizeObserver(()=>{const g=$("grid");if(!galList.length||!g.clientWidth)return;const min=galBig?340:190;const c=Math.max(2,Math.min(6,Math.floor((g.clientWidth+6)/(min+6))));if(c!==+g.dataset.cols)layoutGrid()}).observe($("grid"));
 // 相対期間（今月など）は開くたびに今日を基準に計算し直す
 {const r=presetRange(filt.preset);if(r)[filt.from,filt.to]=r}
 syncFilterInputs();

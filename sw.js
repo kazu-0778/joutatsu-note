@@ -2,7 +2,7 @@
  * ページ（HTML）は通信できるときは常に最新を取り、取れないときだけキャッシュを使う。
  * Googleのログインやドライブとの通信はキャッシュしない。
  */
-const CACHE = "joutatsu-note-v4";
+const CACHE = "joutatsu-note-v5";
 const SHELL = ["./", "index.html", "drive.js", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"];
 
