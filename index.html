@@ -357,6 +357,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
+const APP_VERSION="2026.11.03-4";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -1013,7 +1014,7 @@ function openSettings(){
       <div><button class="btn sm" type="button" id="sAddPh">＋ 工程を追加</button></div>
     </fieldset>
   </div>
-  <div class="dlg-foot"><button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="sSave">保存</button></div>`,
+  <div class="dlg-foot"><span class="hint" style="margin-right:auto;align-self:center">バージョン ${APP_VERSION}</span><button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="button" id="sSave">保存</button></div>`,
   ()=>{
     drawAxes();drawPh();
     document.querySelectorAll('input[name="sTheme"]').forEach(r=>r.onchange=()=>setTheme(r.value));
