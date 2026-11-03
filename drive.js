@@ -20,8 +20,9 @@
 
   let token = null, tokenExp = 0, syncing = false, again = false, debounce = null;
   let status = "idle", lastError = "", panelEl = null;
+  let autoTried = 0;
   try {
-    const t = JSON.parse(sessionStorage.getItem(K.token) || "null");
+    const t = JSON.parse(localStorage.getItem(K.token) || sessionStorage.getItem(K.token) || "null");
     if (t && t.exp > Date.now() + 60000) { token = t.token; tokenExp = t.exp; }
   } catch (e) {}
 
@@ -42,10 +43,16 @@
       }, 100);
     });
   }
-  async function getToken(interactive) {
-    if (token && tokenExp > Date.now() + 60000) return token;
+  let pending = null;
+  async function getToken(interactive, force) {
+    if (!force && token && tokenExp > Date.now() + 60000) return token;
     if (!interactive) throw { code: "need_login" };
-    await waitGis();
+    if (pending) return pending;
+    pending = requestToken().finally(() => { pending = null; });
+    return pending;
+  }
+  async function requestToken() {
+    if (!(window.google && google.accounts && google.accounts.oauth2)) await waitGis();
     return new Promise((res, rej) => {
       const client = google.accounts.oauth2.initTokenClient({
         client_id: clientId(),
@@ -54,7 +61,7 @@
           if (r.error) return rej({ code: r.error });
           if (!google.accounts.oauth2.hasGrantedAllScopes(r, SCOPE)) return rej({ code: "scope_denied" });
           token = r.access_token; tokenExp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
-          try { sessionStorage.setItem(K.token, JSON.stringify({ token, exp: tokenExp })); } catch (e) {}
+          try { localStorage.setItem(K.token, JSON.stringify({ token, exp: tokenExp })); } catch (e) {}
           res(token);
         },
         error_callback: (e) => rej({ code: (e && e.type) || "popup_failed" }),
@@ -63,7 +70,19 @@
       client.requestAccessToken(Object.assign({ prompt: linked() ? "" : "consent" }, email ? { login_hint: email } : {}));
     });
   }
-  function dropToken() { token = null; tokenExp = 0; try { sessionStorage.removeItem(K.token); } catch (e) {} }
+  function dropToken() { token = null; tokenExp = 0; try { localStorage.removeItem(K.token); sessionStorage.removeItem(K.token); } catch (e) {} }
+
+  /* ログインが切れた（または切れそうな）ときは、次に画面を触ったタイミングで自動で取り直す。
+     ポップアップは操作の中でしか開けないため、タップ（クリック）をきっかけにする。
+     一度許可済みなので画面は一瞬開いて自動で閉じる。失敗したら5分は再挑戦しない。 */
+  function onGesture() {
+    if (!linked() || !configured() || syncing) return;
+    const soon = !token || tokenExp < Date.now() + 5 * 60000;
+    if (!soon || Date.now() - autoTried < 5 * 60000) return;
+    autoTried = Date.now();
+    getToken(true, true).then(() => { autoTried = 0; sync(false); }).catch(() => { if (!token || tokenExp < Date.now() + 60000) setStatus("need_login"); });
+  }
+
 
   async function api(url, opts) {
     const t = await getToken(false);
@@ -253,6 +272,7 @@
     paint();
     if (!linked()) return;
     sync(false);
+    document.addEventListener("click", onGesture, true);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sync(false); });
     setInterval(() => { if (document.visibilityState === "visible") sync(false); }, 120000);
   };
@@ -263,7 +283,7 @@
     if (el) {
       if (!linked()) el.innerHTML = "";
       else if (status === "syncing") el.innerHTML = " ・ Googleドライブと同期中…";
-      else if (status === "need_login") el.innerHTML = ` ・ <button type="button" class="linkbtn" id="syncLogin">Googleにログインして同期</button>`;
+      else if (status === "need_login") el.innerHTML = ` ・ 画面に触れると自動で再ログインします <button type="button" class="linkbtn" id="syncLogin">今すぐログイン</button>`;
       else if (status === "error") el.innerHTML = ` ・ 同期できませんでした <button type="button" class="linkbtn" id="syncRetry">再試行</button>`;
       else el.innerHTML = ` ・ Googleドライブ：同期済み ${hhmm(lget(K.last))}`;
       const a = document.getElementById("syncLogin"), b = document.getElementById("syncRetry");
