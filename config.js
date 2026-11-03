@@ -3,5 +3,5 @@
  * 公開されても問題のない値です（クライアントシークレットはここに書かないでください）。
  */
 window.JOUTATSU_CONFIG = {
-  googleClientId: "YOUR_CLIENT_ID.apps.googleusercontent.com",
+  googleClientId: "422822296088-brhlt0jpp5nuvo0rfq927e2knmqshu52.apps.googleusercontent.com",
 };
