@@ -215,7 +215,7 @@
 
   /* ---------- 連携・解除 ---------- */
   async function link() {
-    if (!configured()) { toast("GoogleのクライアントIDが設定されていません（config.js）"); return; }
+    if (!configured()) { toast("まだ連携の準備中です（GoogleのクライアントIDが未設定）"); return; }
     try {
       setStatus("syncing");
       await getToken(true);
@@ -306,7 +306,7 @@
         </ol>
         <p class="note">作品はあなたのGoogleドライブの「上達ノート」フォルダに保存され、運営側のサーバーには保存されません。上達ノートが触れるのは、このアプリが作ったファイルだけです。連携を解除しても、ドライブ内のデータはそのまま残ります。</p>
         ${configured() ? "" : `<p class="note">GoogleのクライアントIDがまだ設定されていないため、連携できません（config.js）。</p>`}
-        <div><button class="btn primary" type="button" id="gdLink" ${configured() ? "" : "disabled"}>Googleドライブと連携</button></div>
+        <div><button class="btn primary" type="button" id="gdLink">Googleドライブと連携</button></div>
       </div>`;
     el.querySelectorAll('input[name="stor"]').forEach((r) => (r.onchange = () => { el.querySelector("#gdGuide").hidden = r.value !== "gdrive"; }));
     el.querySelector("#gdLink").onclick = link;
