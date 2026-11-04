@@ -102,6 +102,9 @@ header.top .brand{grid-area:brand} header.top .actions{grid-area:actions} header
 .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap;border-right:2px solid var(--sheet);opacity:.45}
 .seg.done{opacity:1}
 .seg.cur{opacity:1;box-shadow:inset 0 0 0 2px var(--ink)}
+.seg{cursor:pointer}.seg:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.segtip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12px;line-height:1.6;padding:8px 12px;border-radius:8px;max-width:min(320px,calc(100vw - 16px));box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.segtip b{font-weight:700}
 .today{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn)}
 .today::after{content:"今日";position:absolute;top:-16px;left:-10px;font-size:10px;color:var(--warn);font-weight:700}
 .sched-meta{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
@@ -378,7 +381,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.04-3";
+const APP_VERSION="2026.11.04-4";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -606,7 +609,7 @@ function renderSched(){
     let prev=w.start;
     const cur=(w.phases||[]).find(p=>!p.done);
     const segs=(w.phases||[]).map(p=>{const len=Math.max(diffDays(prev,p.due),0.4);prev=p.due;
-      return`<div class="seg ${p.done?"done":""} ${p===cur?"cur":""}" style="flex:${len};background:${phaseColor(p.name)}" title="${esc(p.name)} 〜${fmt(p.due)}">${esc(p.name)}</div>`}).join("");
+      return`<div class="seg ${p.done?"done":""} ${p===cur?"cur":""}" style="flex:${len};background:${phaseColor(p.name)}" data-seg="${w.id}:${w.phases.indexOf(p)}" tabindex="0" role="button" aria-label="${esc(p.name)}の計画時間と残り時間">${esc(p.name)}</div>`}).join("");
     const pos=diffDays(w.start,t)/total*100;
     const left=diffDays(t,w.due);
     let state; if(!cur) state=`<span class="chip ok">全工程完了</span>`;
@@ -619,6 +622,35 @@ function renderSched(){
       <span class="sched-actions"><button class="btn sm ghost" type="button" data-edit="${w.id}">編集</button>${settings.useClaude||w.consult?`<button class="btn sm ghost" type="button" data-consult="${w.id}">${w.consult?"相談結果":"相談結果を記録"}</button>`:""}${cur?`<button class="btn sm ${cur===w.phases[w.phases.length-1]?"":"primary"}" type="button" data-step="${w.id}">「${esc(cur.name)}」を完了</button>`:""}<button class="btn sm ${cur?"":"primary"}" type="button" data-finish="${w.id}">完成として記録</button></span></div>
     </div>`}).join("");
 }
+
+/* 工程バーの吹き出し：計画時間と残り時間 */
+const sumHours=(a,b,h)=>{let t=0;for(let d=a;diffDays(d,b)>=0;d=addDays(d,1))t+=dayHours(d,h);return Math.round(t*10)/10};
+function segInfo(w,i){
+  const ph=w.phases,p=ph[i],h=w.hours||settings.hours,t=today();
+  const plan=allocate(w.start,w.due,ph,h).phases[i].hours;
+  const from=i===0?w.start:ph[i-1].due;
+  const cur=ph.find(x=>!x.done);
+  let rest;
+  if(p.done)rest=`完了${p.doneAt?`（${fmt(p.doneAt)}）`:""}`;
+  else if(diffDays(t,p.due)<0)rest=`残り 0h（${-diffDays(t,p.due)}日遅れ）`;
+  else if(p===cur){const av=sumHours(diffDays(from,t)>0?t:from,p.due,h);rest=`残り <b>${Math.min(plan,av)}h</b>（${fmt(p.due)}の期日まで${av<plan?"。計画より少なくなっています":""}）`}
+  else rest=`残り <b>${plan}h</b>（未着手）`;
+  return`<b>${esc(p.name)}</b>　${fmt(from)}〜${fmt(p.due)}<br>計画 <b>${plan}h</b> ・ ${rest}`;
+}
+const segTip=document.createElement("div");segTip.className="segtip";segTip.hidden=true;document.body.appendChild(segTip);
+let segOn=null;
+function showSeg(el){const [id,i]=el.dataset.seg.split(":");const w=works.find(x=>x.id===id);if(!w||!w.phases[+i])return;
+  segTip.innerHTML=segInfo(w,+i);segTip.hidden=false;segOn=el;
+  const r=el.getBoundingClientRect(),tw=segTip.offsetWidth,th=segTip.offsetHeight;
+  let x=r.left+r.width/2-tw/2;x=Math.max(8,Math.min(x,innerWidth-tw-8));
+  let y=r.top-th-8;if(y<8)y=r.bottom+8;
+  segTip.style.left=x+"px";segTip.style.top=y+"px"}
+function hideSeg(){segTip.hidden=true;segOn=null}
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest("[data-seg]");if(el)showSeg(el);else if(segOn)hideSeg()});
+document.addEventListener("click",e=>{const el=e.target.closest("[data-seg]");if(el)showSeg(el);else if(segOn)hideSeg()});
+document.addEventListener("focusin",e=>{const el=e.target.closest&&e.target.closest("[data-seg]");if(el)showSeg(el)});
+document.addEventListener("focusout",e=>{if(e.target.closest&&e.target.closest("[data-seg]"))hideSeg()});
+addEventListener("scroll",()=>{if(segOn)hideSeg()},{passive:true});addEventListener("resize",()=>{if(segOn)hideSeg()});
 
 function remainHours(w){const h=w.hours||settings.hours;let t=0;for(let d=today();diffDays(d,w.due)>=0;d=addDays(d,1))t+=dayHours(d,h);return Math.round(t*10)/10}
 
