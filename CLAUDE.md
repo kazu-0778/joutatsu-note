@@ -2,7 +2,7 @@
 
 イラストの上達を補助するWebアプリ（PWA）。仕様の正本は `docs/requirements.md`（Word版：`docs/上達ノート_要件定義書.docx`、共同編集用：https://claude.ai/artifact/JhSezKgNwvAjd2nEZWYosg ）。作業の前に `docs/requirements.md` を読むこと。
 
-## 現状（2026-11-03 時点、APP_VERSION 2026.11.04-1）
+## 現状（2026-11-03 時点、APP_VERSION 2026.11.04-2）
 
 - 公開版：https://kazu-0778.github.io/joutatsu-note/ （main への push で GitHub Pages に数分で反映）
 - 構成：`index.html`（本体）／`drive.js`（Googleドライブ双方向同期、drive.file）／`config.js`（OAuthクライアントID設定済み）／`sw.js`・`manifest.webmanifest`・`icons/`（PWA）
