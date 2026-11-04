@@ -2,12 +2,12 @@
 
 イラストの上達を補助するWebアプリ（PWA）。仕様の正本は `docs/requirements.md`（Word版：`docs/上達ノート_要件定義書.docx`、共同編集用：https://claude.ai/artifact/JhSezKgNwvAjd2nEZWYosg ）。作業の前に `docs/requirements.md` を読むこと。
 
-## 現状（2026-11-03 時点、APP_VERSION 2026.11.03-8）
+## 現状（2026-11-03 時点、APP_VERSION 2026.11.04-1）
 
 - 公開版：https://kazu-0778.github.io/joutatsu-note/ （main への push で GitHub Pages に数分で反映）
 - 構成：`index.html`（本体）／`drive.js`（Googleドライブ双方向同期、drive.file）／`config.js`（OAuthクライアントID設定済み）／`sw.js`・`manifest.webmanifest`・`icons/`（PWA）
 - 保存：端末内 IndexedDB が正。設定でGoogleドライブと同期（作品ごとに updatedAt で新しい方、削除は tombstone）
-- 主な機能：作品記録・自己評価（項目カスタム）・課題と反省（スキップ可）・練習メニュー・スケジュール（作業時間×配分%で期日計算、工程完了ボタン）・実績からの配分提案・お題ガチャ＋Claude相談（claude.ai を相談文入りで開く）・成長の記録・正方形タイルのギャラリー・ZIPバックアップ・ライト／ダーク
+- 主な機能：作品記録・自己評価（項目カスタム）・課題と反省（スキップ可）・練習メニュー・スケジュール（作業時間×配分%で期日計算、工程完了ボタン）・実績からの配分提案・お題ガチャ＋Claude相談（claude.ai を相談文入りで開く、結果のまとめを取り込んで記録）・成長の記録・正方形タイルのギャラリー・ZIPバックアップ・ライト／ダーク
 - claude.ai 上の試作版（https://claude.ai/artifact/5emCiCaXmy7kT7GEjbGVFE ）は仕様確認用。今後は公開版を正とし、試作版の更新は不要（ユーザーから頼まれたときだけ）
 
 ## 作業のルール

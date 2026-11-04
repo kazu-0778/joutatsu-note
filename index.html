@@ -185,6 +185,8 @@ textarea{min-height:76px;resize:vertical}
 @media (max-width:640px){.detail-top{grid-template-columns:minmax(0,1fr)}}
 .detail-top img{width:100%;border-radius:8px;background:var(--paper)}
 .kv{display:flex;flex-direction:column;gap:2px}
+.consult span{overflow-wrap:anywhere}.consult-in{display:flex;flex-direction:column;gap:8px}.consult-in textarea{width:100%}
+.consult-d summary{cursor:pointer;color:var(--ink-2,inherit);font-size:13px;padding:2px 0}.consult-d .prev-box{margin-top:6px}
 .kv p{margin:0;white-space:pre-wrap}
 .radar text{font-size:11px;fill:var(--ink-2);font-family:var(--f-body)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 18px;border-radius:999px;font-size:14px;z-index:50}
@@ -376,7 +378,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.03-8";
+const APP_VERSION="2026.11.04-1";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -611,9 +613,10 @@ function renderSched(){
     else{const d=diffDays(t,cur.due); state= d<0?`<span class="chip warn">${esc(cur.name)} ${-d}日遅れ</span>`: `<span class="chip">${esc(cur.name)} あと${d}日</span>`;}
     return`<div class="sched-item">
       <div class="sched-head"><b>${esc(w.title)}</b>${state}</div>${w.theme&&w.theme.text?`<span class="hint">テーマ：${esc(w.theme.text)}</span>`:""}
+      ${w.consult?`<details class="consult-d"><summary>Claudeとの相談結果</summary>${consultHTML(w.consult)}</details>`:""}
       <div class="bar">${segs}${pos>=0&&pos<=100?`<div class="today" style="left:${pos}%"></div>`:""}</div>
       <div class="sched-meta"><span class="mono">${fmtFull(w.start)} → ${fmtFull(w.due)}</span><span>締切まで ${left>=0?left+"日":"<b style='color:var(--warn)'>"+(-left)+"日超過</b>"}</span>${cur&&left>=0?`<span>残り作業可能 <span class="mono">${remainHours(w)}</span>h</span>`:""}
-      <span class="sched-actions"><button class="btn sm ghost" type="button" data-edit="${w.id}">編集</button>${cur?`<button class="btn sm ${cur===w.phases[w.phases.length-1]?"":"primary"}" type="button" data-step="${w.id}">「${esc(cur.name)}」を完了</button>`:""}<button class="btn sm ${cur?"":"primary"}" type="button" data-finish="${w.id}">完成として記録</button></span></div>
+      <span class="sched-actions"><button class="btn sm ghost" type="button" data-edit="${w.id}">編集</button>${settings.useClaude||w.consult?`<button class="btn sm ghost" type="button" data-consult="${w.id}">${w.consult?"相談結果":"相談結果を記録"}</button>`:""}${cur?`<button class="btn sm ${cur===w.phases[w.phases.length-1]?"":"primary"}" type="button" data-step="${w.id}">「${esc(cur.name)}」を完了</button>`:""}<button class="btn sm ${cur?"":"primary"}" type="button" data-finish="${w.id}">完成として記録</button></span></div>
     </div>`}).join("");
 }
 
@@ -980,12 +983,57 @@ ${recent||"（まだありません）"}
 
 進め方（一問一答でお願いします）：
 - 質問は1回に1つだけしてください。私が答えるまで、次の質問やテーマ案に進まないでください。
-- 各質問には答えやすいように選択肢を3〜4個（A〜D）付け、最後に「その他（自由に書く）」も入れてください。
+- スマホで答えやすいように、質問はタップで選べる選択式（選択肢のボタン）で出してください。選択肢は3〜4個にし、自由に書ける答え方も残してください。
+- 選択式の機能が使えない場合は、選択肢に A〜D の記号を付けてください。私は記号だけで答えます。
 - 質問は全部で3問です。例えば「今の気分」「いちばん描きたい要素（キャラ・背景・小物など）」「見せ場にしたいところ」のように、テーマを絞り込める順番で聞いてください。
 - 3問の答えがそろったら、テーマ案を3つ出してください。各案に「タイトル」「どんな場面か」「構図のアイデア」「見せ場」を付けてください。お題の言葉は全部使わなくても、ふくらませてもかまいません。最近の作品と題材がかぶりすぎないようにしてください。
-- 私が案を選んだら、上達ノートのテーマ欄に貼れるように、テーマを1行でまとめてください。
+- どの案にするかも選択式で聞いてください。
+- 私が案を選んだら、上達ノートに取り込めるように、次の形式のまとめを1つのコードブロックで出してください（各項目は1行で、見出しの言葉は変えないでください）。
+
+【上達ノート用まとめ】
+タイトル：
+テーマ：（1行で）
+場面：
+構図：
+見せ場：
+練習ポイント：
 
 では、1問目だけをお願いします。`;
+}
+/* --- Claudeの相談結果（「上達ノート用まとめ」）の取り込み --- */
+const CONSULT_KEYS=[["title","タイトル"],["theme","テーマ"],["scene","場面"],["comp","構図"],["highlight","見せ場"],["point","練習ポイント"]];
+function parseConsult(raw){
+  const text=String(raw||"").replace(/```[a-z]*\n?/g,"").trim(); if(!text)return null;
+  const c={raw:text,at:new Date().toISOString()}; let last=null;
+  text.split(/\r?\n/).forEach(line=>{const l=line.replace(/^[\s・\-*#>]+/,"").replace(/\*\*/g,"").trim(); if(!l||/上達ノート用まとめ/.test(l))return;
+    const m=l.match(/^([^：:]{1,8})[：:]\s*(.*)$/); const k=m&&CONSULT_KEYS.find(([,lb])=>m[1].trim()===lb);
+    if(k){c[k[0]]=m[2].replace(/^（1行で）/,"").trim();last=k[0]} else if(last&&c[last]!==undefined){c[last]=(c[last]?c[last]+" ":"")+l}});
+  if(!CONSULT_KEYS.some(([k])=>c[k])) c.memo=text;
+  return c;
+}
+function consultHTML(c){if(!c)return"";
+  return`<div class="prev-box consult"><span class="label">Claudeとの相談結果（${fmtFull(ymd(new Date(c.at)))}）</span>
+    ${CONSULT_KEYS.filter(([k])=>c[k]).map(([k,l])=>`<span><span class="hint">${l}</span>　${esc(c[k])}</span>`).join("")}
+    ${c.memo?`<p style="margin:0;white-space:pre-wrap">${esc(c.memo)}</p>`:""}</div>`}
+function consultBox(id){return`<div class="consult-in" id="${id}" hidden>
+  <p class="hint">Claudeが最後に出した「上達ノート用まとめ」をコピーして、ここに貼り付けてください。</p>
+  <textarea id="${id}Txt" rows="6" placeholder="【上達ノート用まとめ】\nタイトル：…\nテーマ：…"></textarea>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" id="${id}Paste">コピーした内容を貼り付け</button><button type="button" class="btn sm primary" id="${id}Ok">取り込む</button></div></div>`}
+function wireConsultBox(id,onOk){
+  $(id+"Paste").onclick=()=>{if(!navigator.clipboard||!navigator.clipboard.readText){toast("欄を長押しして「ペースト」してください");$(id+"Txt").focus();return}
+    navigator.clipboard.readText().then(t=>{$(id+"Txt").value=t;dlgDirty=true}).catch(()=>{toast("欄を長押しして「ペースト」してください");$(id+"Txt").focus()})};
+  $(id+"Ok").onclick=()=>{const c=parseConsult($(id+"Txt").value);if(!c){toast("まとめを貼り付けてください");return}onOk(c)};
+}
+function openConsult(w){
+  guardNext();openDlg(`${head("相談結果を記録")}
+  <div class="dlg-body"><p class="hint">「${esc(w.title)}」の記録として残します。テーマが空なら、まとめのテーマも入れます。</p>${w.consult?consultHTML(w.consult)+`<p class="hint">取り込むと、今の相談結果を置き換えます。</p>`:""}${consultBox("cIn").replace(" hidden","")}</div>
+  <div class="dlg-foot">${w.consult?`<button class="btn danger" type="button" id="cDel" style="margin-right:auto">相談結果を消す</button>`:""}<button class="btn" type="button" data-close>キャンセル</button></div>`,()=>{
+    $("cInTxt").addEventListener("input",()=>{dlgDirty=true});
+    const save=async(c)=>{w.consult=c;if(c&&c.theme&&!(w.theme&&w.theme.text))w.theme=Object.assign({},w.theme||{source:"manual"},{text:c.theme});
+      w.updatedAt=new Date().toISOString();try{await store.save(w);closeDlg();toast(c?"相談結果を記録しました":"相談結果を消しました")}catch(e){toast("保存できませんでした")}};
+    wireConsultBox("cIn",save);
+    if($("cDel"))$("cDel").onclick=()=>save(null);
+  });
 }
 function setupGacha(w,getCtx){
   const g=Object.assign({who:"",where:"",mood:"",point:"",scale:"",lock:{},usePoint:true},w.theme&&w.theme.gacha||{});g.lock={};
@@ -1003,7 +1051,7 @@ function setupGacha(w,getCtx){
       </div>
       <div class="gactions"><button type="button" class="btn sm" id="gAll">ぜんぶ引き直す</button><button type="button" class="btn sm primary" id="gUse">このお題で描く</button>
         ${settings.useClaude?`<a class="btn sm" id="gClaude" target="_blank" rel="noopener">Claudeで相談する ↗</a><button type="button" class="btn sm ghost" id="gCopy">相談文をコピー</button>`:""}</div>
-      ${settings.useClaude?`<p class="hint">claude.ai が開き、お題と今の課題・最近の作品を伝えた状態で相談を始められます。決まったテーマを上の「テーマ」欄に貼ってください。</p>`:""}`;
+      ${settings.useClaude?`<p class="hint">claude.ai が開き、お題と今の課題・最近の作品を伝えた状態で相談を始められます。最後に出る「上達ノート用まとめ」をコピーして、下の「相談結果を取り込む」に貼ってください。</p>`:""}`;
     panel.querySelectorAll("[data-glock]").forEach(b=>b.onclick=()=>{const k=b.dataset.glock;g.lock[k]=!g.lock[k];draw()});
     panel.querySelectorAll("[data-groll]").forEach(b=>b.onclick=()=>{const k=b.dataset.groll;g[k]=drawWord(k,g[k]);draw()});
     const gp=$("gPoint");if(gp)gp.onchange=()=>{g.usePoint=gp.checked};
@@ -1068,6 +1116,8 @@ function openPlan(existing){
       <div class="f"><label for="pTheme">何を描くか（任意）</label><input type="text" id="pTheme" value="${esc(w.theme&&w.theme.text)}" placeholder="例：雨上がりの駅にいる魔女（レトロ）"></div>
       <div><button class="btn sm" type="button" id="gachaBtn">お題ガチャを引く</button> <span class="hint">描きたいものが決まらないときに</span></div>
       <div id="gacha" class="gacha" hidden></div>
+      ${settings.useClaude||w.consult?`<div id="pConsultView"></div>
+      <div><button class="btn sm" type="button" id="pConsultBtn">Claudeの相談結果を取り込む</button></div>${consultBox("pCi")}`:""}
     </fieldset>
     <fieldset><legend>工程と期日</legend>
       <p class="hint" id="pSum"></p>
@@ -1081,6 +1131,14 @@ function openPlan(existing){
   ()=>{
     recompute();
     const gacha=setupGacha(w,()=>({H:info?info.H:0,start:w.start,due:w.due}));
+    let consult=w.consult||null;
+    const drawConsult=()=>{const v=$("pConsultView");if(!v)return;v.innerHTML=consult?consultHTML(consult)+`<div><button type="button" class="btn sm ghost" id="pConsultRm">相談結果を外す</button></div>`:"";
+      const rm=$("pConsultRm");if(rm)rm.onclick=()=>{consult=null;dlgDirty=true;drawConsult()};
+      $("pConsultBtn").textContent=consult?"相談結果を取り込み直す":"Claudeの相談結果を取り込む"};
+    if($("pConsultBtn")){drawConsult();
+      $("pConsultBtn").onclick=()=>{const b=$("pCi");b.hidden=!b.hidden;if(!b.hidden)$("pCiTxt").focus()};
+      wireConsultBox("pCi",c=>{consult=c;dlgDirty=true;if(c.theme)$("pTheme").value=c.theme;if(c.title&&!$("pTitle").value.trim())$("pTitle").value=c.title;
+        $("pCiTxt").value="";$("pCi").hidden=true;drawConsult();toast("相談結果を取り込みました（保存で記録されます）")})}
     ["pStart","pDue","pWd","pHd"].forEach(id=>$(id).addEventListener("change",recompute));
     const tbl=$("pTable");
     tbl.addEventListener("change",e=>{const t=e.target,i=+t.dataset.i,k=t.dataset.k;if(isNaN(i))return;
@@ -1094,7 +1152,7 @@ function openPlan(existing){
     $("pSave").onclick=async()=>{
       const title=$("pTitle").value.trim();if(!title){$("pTitle").focus();toast("タイトルを入れてください");return}
       if(!w.start||!w.due||diffDays(w.start,w.due)<0){toast("締切は開始日より後にしてください");return}
-      w.title=title;w.phases=phases;w.theme=gacha.collect();
+      w.title=title;w.phases=phases;w.theme=gacha.collect();if($("pConsultBtn"))w.consult=consult;
       if(w.theme&&w.theme.source==="gacha"){w.tags=[...new Set([...(w.tags||[]),"お題ガチャ"])]}w.updatedAt=new Date().toISOString();
       try{await store.save(w);closeDlg();toast("スケジュールを保存しました")}catch(e){console.error(e);toast("保存できませんでした")}
     };
@@ -1237,6 +1295,7 @@ function openDetail(w){
       <div class="kv"><span class="label">気になった点</span><p>${esc(w.review&&w.review.bad)||"—"}</p></div>
     </div>
     ${w.theme&&w.theme.text?`<div class="kv"><span class="label">テーマ</span><p>${esc(w.theme.text)}</p></div>`:""}
+    ${w.consult?consultHTML(w.consult):""}
     ${c?`<div class="kv"><span class="label">この作品から決めた次の課題</span><p><span class="chip">${esc((ADVICE[c.category]||ADVICE.other).label)}</span> <b>${esc(c.text)}</b></p></div>`:""}
   </div>
   <div class="dlg-foot"><button class="btn" type="button" data-close>閉じる</button><button class="btn primary" type="button" id="dEdit">編集</button></div>`,
@@ -1361,11 +1420,12 @@ async function completePhase(w){
 
 /* ============ イベント ============ */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-close],[data-open],[data-edit],[data-finish],[data-act],[data-step]");if(!t)return;
+  const t=e.target.closest("[data-close],[data-open],[data-edit],[data-finish],[data-act],[data-step],[data-consult]");if(!t)return;
   if(t.hasAttribute("data-close"))return requestClose();
   if(!store){toast("読み込み中です");return}
   const find=id=>works.find(w=>w.id===id);
   if(t.dataset.step)return completePhase(find(t.dataset.step));
+  if(t.dataset.consult)return openConsult(find(t.dataset.consult));
   if(t.dataset.open)openDetail(find(t.dataset.open));
   else if(t.dataset.edit)openPlan(find(t.dataset.edit));
   else if(t.dataset.finish)openRecord(find(t.dataset.finish));
