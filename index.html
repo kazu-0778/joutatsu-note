@@ -378,7 +378,7 @@ details summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
 <script src="drive.js"></script>
 <script>
 /* ============ 定数 ============ */
-const APP_VERSION="2026.11.04-2";
+const APP_VERSION="2026.11.04-3";
 const DEFAULT_SETTINGS={
   axes:[{key:"comp",label:"構図",cat:"composition"},{key:"form",label:"デッサン",cat:"anatomy"},{key:"line",label:"線画",cat:"lineart"},
         {key:"color",label:"色彩",cat:"color"},{key:"light",label:"光と影",cat:"light"},{key:"finish",label:"完成度",cat:"speed"}],
@@ -966,7 +966,8 @@ function drawWord(slot,not){
   let w=pick(pool),n=0;while(w===not&&n++<5)w=pick(pool);return w;
 }
 function drawScale(H){return H<6?"バストアップ・1人":H<=15?"腰上〜全身・1人、簡単な背景":"全身・背景あり（2人まで）"}
-function drawPoint(){const c=latestChallenge();if(!c)return"";const cat=ADVICE[c.nextChallenge.category]?c.nextChallenge.category:"other";return pick(GACHA.points[cat]||GACHA.points.other)}
+function drawPoint(prev){const c=latestChallenge();if(!c)return"";const cat=ADVICE[c.nextChallenge.category]?c.nextChallenge.category:"other";const pool=GACHA.points[cat]||GACHA.points.other;
+  let v=pick(pool);for(let i=0;i<5&&v===prev&&pool.length>1;i++)v=pick(pool);return v}
 function claudePrompt(g,ctx){
   const recent=done().slice(0,5).map(w=>`・${w.title}${(w.tags||[]).length?`（${w.tags.map(t=>"#"+t).join(" ")}）`:""}`).join("\n");
   const c=latestChallenge();
@@ -1040,20 +1041,21 @@ function setupGacha(w,getCtx){
   let used=!!(w.theme&&w.theme.source==="gacha");
   const panel=$("gacha");
   const slots=[["who","だれ・何"],["where","どこ・状況"],["mood","雰囲気"]];
-  const roll=(all)=>{slots.forEach(([k])=>{if(all?!g.lock[k]:true)g[k]=drawWord(k,g[k])});g.point=drawPoint();g.scale=drawScale(getCtx().H)};
+  const roll=(all)=>{slots.forEach(([k])=>{if(all?!g.lock[k]:true)g[k]=drawWord(k,g[k])});if(!(all&&g.lock.point&&g.point))g.point=drawPoint(g.point);g.scale=drawScale(getCtx().H)};
   const draw=()=>{
     const ctx=getCtx();g.scale=drawScale(ctx.H);
     panel.innerHTML=`<div class="gacha-slots">${slots.map(([k,l])=>`<div class="gslot ${g.lock[k]?"locked":""}"><span class="label">${l}</span><b>${esc(g[k])}</b>
         <span class="gbtns"><button type="button" class="btn sm ghost" data-glock="${k}" aria-pressed="${!!g.lock[k]}">${g.lock[k]?"固定中":"固定"}</button><button type="button" class="btn sm ghost" data-groll="${k}" ${g.lock[k]?"disabled":""}>引き直す</button></span></div>`).join("")}</div>
       <div class="gextra">
-        ${g.point?`<label class="toggle"><input type="checkbox" id="gPoint" ${g.usePoint?"checked":""}><span>練習ポイント：<b>${esc(g.point)}</b><br><span class="hint">いまの課題「${esc(latestChallenge().nextChallenge.text)}」から</span></span></label>`:`<p class="hint">いまの課題を決めると、ここに練習ポイントが付きます。</p>`}
+        ${g.point?`<label class="toggle"><input type="checkbox" id="gPoint" ${g.usePoint?"checked":""}><span>練習ポイント：<b>${esc(g.point)}</b><br><span class="hint">いまの課題「${esc(latestChallenge().nextChallenge.text)}」から</span></span></label>
+        <span class="gbtns" style="margin-left:22px"><button type="button" class="btn sm ghost" data-glock="point" aria-pressed="${!!g.lock.point}">${g.lock.point?"固定中":"固定"}</button><button type="button" class="btn sm ghost" data-groll="point" ${g.lock.point?"disabled":""}>引き直す</button></span>`:`<p class="hint">いまの課題を決めると、ここに練習ポイントが付きます。</p>`}
         <p class="hint">描く範囲の目安：<b>${esc(g.scale)}</b>（作業できる時間 約${Math.round(ctx.H)}時間）</p>
       </div>
       <div class="gactions"><button type="button" class="btn sm" id="gAll">ぜんぶ引き直す</button><button type="button" class="btn sm primary" id="gUse">このお題で描く</button>
         ${settings.useClaude?`<a class="btn sm" id="gClaude" target="_blank" rel="noopener">Claudeで相談する ↗</a><button type="button" class="btn sm ghost" id="gCopy">相談文をコピー</button>`:""}</div>
       ${settings.useClaude?`<p class="hint">claude.ai が開き、お題と今の課題・最近の作品を伝えた状態で相談を始められます。最後に出る「上達ノート用まとめ」をコピーして、下の「相談結果を取り込む」に貼ってください。</p>`:""}`;
     panel.querySelectorAll("[data-glock]").forEach(b=>b.onclick=()=>{const k=b.dataset.glock;g.lock[k]=!g.lock[k];draw()});
-    panel.querySelectorAll("[data-groll]").forEach(b=>b.onclick=()=>{const k=b.dataset.groll;g[k]=drawWord(k,g[k]);draw()});
+    panel.querySelectorAll("[data-groll]").forEach(b=>b.onclick=()=>{const k=b.dataset.groll;g[k]=k==="point"?drawPoint(g.point):drawWord(k,g[k]);draw()});
     const gp=$("gPoint");if(gp)gp.onchange=()=>{g.usePoint=gp.checked};
     $("gAll").onclick=()=>{roll(true);draw()};
     $("gUse").onclick=()=>{const t=`${g.who} × ${g.where} × ${g.mood}${g.point&&g.usePoint?`（練習：${g.point}）`:""}`;$("pTheme").value=t;used=true;
